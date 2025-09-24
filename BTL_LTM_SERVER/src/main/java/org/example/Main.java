@@ -1,10 +1,16 @@
 package org.example;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class Main {
     public static void main(String[] agrs) {
-        new Server().start(8080);
+        try (Connection con = db.Connect.getConnection();) {
+            System.out.println("Connected to MySql Server.");
+        } catch (SQLException ex) {
+            System.out.println("Connection Error!");
+            ex.printStackTrace();
+        }
+        new Server().start(8081);
     }
 }
