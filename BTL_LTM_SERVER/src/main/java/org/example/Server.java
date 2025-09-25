@@ -92,6 +92,7 @@ public class Server {
                 }
                 case "LOGIN": {
                     if (parts.length < 3) return "SAI FORMAT";
+                    System.out.println(loggedInUsers.get(clientSocket));
                     String username = parts[1];
                     String password = parts[2];
                     boolean ok = userDao.verifyLogin(username, password);
