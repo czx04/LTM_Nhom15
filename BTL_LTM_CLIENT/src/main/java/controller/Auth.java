@@ -3,7 +3,6 @@ package controller;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Scanner;
 
 public class Auth {
 
@@ -33,9 +32,16 @@ public class Auth {
         }
     }
 
-    private void handleLogout(Scanner scanner, BufferedReader in, BufferedWriter out) throws IOException {
-        sendLine("LOGOUT",out);
-        System.out.println(in.readLine());
+    public String handleLogout(BufferedReader in, BufferedWriter out) {
+        try {
+            sendLine("LOGOUT", out);
+            String response = in.readLine();
+            System.out.println(response);
+            return response;
+        } catch (IOException e) {
+            System.out.println(e);
+            return "fail";
+        }
     }
 
     public String getUsersOnline(BufferedReader in, BufferedWriter out) {

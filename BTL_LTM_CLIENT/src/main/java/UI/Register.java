@@ -63,6 +63,7 @@ public class Register {
         regisButton.addActionListener(e -> {
             String username = usernameField.getText();
             String password = String.valueOf(passwordField.getPassword());
+            System.out.println(username + " " + password);
             regisButton.setEnabled(false);
             SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
                 @Override
@@ -76,8 +77,13 @@ public class Register {
                         String result = get();
                         if ("REGISTED".equals(result)) {
                             home.showHome(frame, in, out,username);
-                        } else {
-                            JOptionPane.showMessageDialog(null, "Sai format username hoặc password!",
+                        }
+                        else if("EXIST".equals(result)){
+                            JOptionPane.showMessageDialog(null, username + "Username đã tồn tại",
+                                    "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                        }
+                        else {
+                            JOptionPane.showMessageDialog(null,username + "Sai format username hoặc password!",
                                     "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                         }
                     } catch (Exception ex) {

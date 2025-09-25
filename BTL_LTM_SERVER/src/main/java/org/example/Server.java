@@ -106,7 +106,7 @@ public class Server {
                 }
                 case "LOGOUT": {
                     loggedInUsers.remove(clientSocket);
-                    return "Da Dang Xuat";
+                    return "LOGOUT";
                 }
                 case "GET_USERS_ONLINE": {
                     java.util.Set<String> names = new java.util.LinkedHashSet<>(loggedInUsers.values());

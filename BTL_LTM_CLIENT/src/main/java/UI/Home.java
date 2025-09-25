@@ -1,7 +1,6 @@
 package UI;
 
 import controller.Auth;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
@@ -36,16 +35,18 @@ public class Home {
         welcomeTextWrapper.add(new JScrollPane(welcomeBody), BorderLayout.CENTER);
         leftPanel.add(welcomeTextWrapper, BorderLayout.CENTER);
 
-
-
         JPanel rightPanel = new JPanel(new BorderLayout());
+        JPanel rightHeader = new JPanel(new BorderLayout());
         JLabel title = new JLabel("Đang online", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
-        rightPanel.add(title, BorderLayout.NORTH);
+        JButton logoutBtn = new JButton("Đăng xuất");
+        rightHeader.add(title, BorderLayout.CENTER);
+        rightHeader.add(logoutBtn, BorderLayout.EAST);
+        rightPanel.add(rightHeader, BorderLayout.NORTH);
 
 
-        DefaultListModel<String> listModel = new DefaultListModel<String>();
-        JList<String> usersList = new JList<String>(listModel);
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        JList<String> usersList = new JList<>(listModel);
         JScrollPane scrollPane = new JScrollPane(usersList);
         rightPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -59,7 +60,7 @@ public class Home {
         splitPane.setContinuousLayout(true);
         container.add(splitPane, BorderLayout.CENTER);
 
-        
+
         refreshBtn.addActionListener(e -> {
             refreshBtn.setEnabled(false);
             SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
@@ -101,6 +102,38 @@ public class Home {
 
         // chạy lần đầu
         refreshBtn.doClick();
+
+        logoutBtn.addActionListener(e -> {
+            logoutBtn.setEnabled(false);
+            SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+                @Override
+                protected String doInBackground() {
+                    return auth.handleLogout(in, out);
+                }
+
+                @Override
+                protected void done() {
+                    logoutBtn.setEnabled(true);
+                    try {
+                        String res = get();
+                        if (res != null && res.startsWith("LOGOUT")) {
+                            new Login().showLogin(frame, in, out);
+                        } else {
+                            JOptionPane.showMessageDialog(null,
+                                    "Đăng xuất thất bại",
+                                    "Lỗi",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null,
+                                "Lỗi kết nối máy chủ",
+                                "Lỗi",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            };
+            worker.execute();
+        });
 
         frame.setContentPane(container);
         frame.revalidate();
