@@ -23,12 +23,12 @@ public class AuthHandler {
     }
     public String handleLogin(String[] parts,Socket clientSocket) throws SQLException {
         if (parts.length < 3) return "SAI FORMAT";
-        System.out.println(SocketController.getLoggedInUsers().get(clientSocket));
+        System.out.println(SocketController.getLoggedInUsers());
         String username = parts[1];
         String password = parts[2];
         boolean ok = userDao.verifyLogin(username, password);
         if (ok) {
-            SocketController.getLoggedInUsers().put(clientSocket, username);
+            SocketController.addLoggedInUser(clientSocket, username);
             System.out.println(clientSocket);
             return "LOGGEDIN";
         } else {

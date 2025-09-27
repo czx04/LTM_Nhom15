@@ -1,5 +1,7 @@
 package db;
 
+import util.Logger;
+
 import java.sql.*;
 
 public class UserDao {
@@ -10,7 +12,7 @@ public class UserDao {
         if (findUserIdByUsername(username) != null) {
             return false;
         }
-        String insert = "INSERT INTO users(username, password) VALUES(?, ?)";
+        String insert = "INSERT INTO users(username, password_hash) VALUES(?, ?)";
         try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(insert)) {
             ps.setString(1, username);
@@ -20,7 +22,8 @@ public class UserDao {
     }
 
     public boolean verifyLogin(String username, String passwordPlain) throws SQLException {
-        String select = "SELECT password FROM users WHERE username = ?";
+        String select = "SELECT password_hash FROM users WHERE username = ?";
+        Logger.info(select);
         try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(select)) {
             ps.setString(1, username);

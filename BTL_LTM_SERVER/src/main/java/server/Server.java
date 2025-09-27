@@ -7,6 +7,11 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import db.UserDao;
 import handler.AuthHandler;
@@ -16,10 +21,19 @@ import util.SocketController;
 
 public class Server {
     private ServerSocket serverSocket;
+
+    private volatile boolean running = false;
+    private final ExecutorService pool = Executors.newCachedThreadPool();
+    private final Set<ClientHandler> clients = Collections.synchronizedSet(new HashSet<>());
+
     public Server() {}
 
     public void start(int port) {
         System.out.println("Server starting!!!");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Ctrl+C detected. Shutting down server...");
+            stop();
+        }));
         try {
             serverSocket = new ServerSocket(port);
             while (true) {
@@ -36,6 +50,32 @@ public class Server {
                 Logger.error("Lỗi khi đóng server socket", e);
             }
         }
+    }
+
+    public void stop() {
+        running = false;
+
+        // Đóng server socket
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            Logger.error("Error closing server socket", e);
+        }
+
+//        // Đóng tất cả client
+//        synchronized (clients) {
+//            for (ClientHandler client : clients) {
+//                client.stop();
+//            }
+//            clients.clear();
+//        }
+
+        // Shutdown thread pool
+        pool.shutdownNow();
+
+        System.out.println("Server stopped.");
     }
     private class ClientHandler extends Thread {
         private final Socket clientSocket;
@@ -90,7 +130,6 @@ public class Server {
             }
 
         }
-
         private String handleCommand(String line) throws SQLException {
             System.out.println("Message From Client: " + line);
             String[] parts = line.split("\\|", 3);
