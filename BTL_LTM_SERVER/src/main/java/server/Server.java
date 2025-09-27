@@ -16,14 +16,7 @@ import util.SocketController;
 
 public class Server {
     private ServerSocket serverSocket;
-
-    private final Logger logger;
-    private SocketController socket;
-
-    public Server(Logger logger, SocketController socket) {
-        this.logger = logger;
-        this.socket = socket;
-    }
+    public Server() {}
 
     public void start(int port) {
         System.out.println("Server starting!!!");
@@ -33,14 +26,14 @@ public class Server {
                 new ClientHandler(serverSocket.accept()).start();
             }
         } catch (IOException e) {
-            logger.error("Lỗi khi khởi động server trên port " + port, e);
+            Logger.error("Lỗi khi khởi động server trên port " + port, e);
         } finally {
             try {
                 if (serverSocket != null) {
                     serverSocket.close();
                 }
             } catch (IOException e) {
-                logger.error("Lỗi khi đóng server socket", e);
+                Logger.error("Lỗi khi đóng server socket", e);
             }
         }
     }
@@ -76,12 +69,12 @@ public class Server {
                     }
                 }
             } catch (IOException e) {
-                logger.error("Lỗi I/O khi xử lý client", e);
+                Logger.error("Lỗi I/O khi xử lý client", e);
             } catch (SQLException e) {
-                logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
+                Logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
             } finally {
                 try {
-                    socket.removeLoggedInUser(clientSocket);
+                    SocketController.removeLoggedInUser(clientSocket);
                     if (in != null) {
                         in.close();
                     }
@@ -92,7 +85,7 @@ public class Server {
                         clientSocket.close();
                     }
                 } catch (Exception e) {
-                    logger.error("Lỗi khi đóng kết nối client", e);
+                    Logger.error("Lỗi khi đóng kết nối client", e);
                 }
             }
 
@@ -102,22 +95,13 @@ public class Server {
             System.out.println("Message From Client: " + line);
             String[] parts = line.split("\\|", 3);
             String action = parts[0];
-            switch (action) {
-                case "REGISTER": {
-                   return authHandler.handleRegister(parts);
-                }
-                case "LOGIN": {
-                    return authHandler.handleLogin(parts,clientSocket,socket.getLoggedInUsers());
-                }
-                case "LOGOUT": {
-                    return authHandler.handleLogout(clientSocket,socket.getLoggedInUsers());
-                }
-                case "GET_USERS_ONLINE": {
-                    return homeHanlder.getUserOnl(socket.getLoggedInUsers().values());
-                }
-                default:
-                    return "LOI GI DO ROI";
-            }
+            return switch (action) {
+                case "REGISTER" -> authHandler.handleRegister(parts);
+                case "LOGIN" -> authHandler.handleLogin(parts, clientSocket);
+                case "LOGOUT" -> authHandler.handleLogout(clientSocket, SocketController.getLoggedInUsers());
+                case "GET_USERS_ONLINE" -> homeHanlder.getUserOnl(SocketController.getLoggedInUsers().values());
+                default -> "LOI GI DO ROI";
+            };
         }
     }
 }

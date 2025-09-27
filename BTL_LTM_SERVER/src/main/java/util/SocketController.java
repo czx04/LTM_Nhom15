@@ -5,39 +5,31 @@ import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class SocketController {
-    private static SocketController instance;
-    private static ConcurrentHashMap<Socket, String> loggedInUsers;
+    private static final ConcurrentHashMap<Socket, String> loggedInUsers = new ConcurrentHashMap<>();
 
-    private SocketController() {
-        loggedInUsers = new ConcurrentHashMap<>();
-    }
-    public static SocketController getInstance() {
-        if (instance == null) {
-            synchronized (SocketController.class) {
-                instance = new SocketController();
-            }
-        }
-        return instance;
-    }
-
-    public void addLoggedInUser(Socket sk, String user) {
+    public static void addLoggedInUser(Socket sk, String user) {
         loggedInUsers.put(sk, user);
     }
 
-    public void removeLoggedInUser(Socket sk) {
+    public static void removeLoggedInUser(Socket sk) {
         loggedInUsers.remove(sk);
     }
 
-    public String getUserBySocket(Socket sk) {
+    public static String getUserBySocket(Socket sk) {
         return loggedInUsers.get(sk);
     }
 
-    public void clearLoggedInUsers() {
+    public static void clearLoggedInUsers() {
         loggedInUsers.clear();
     }
 
-    public Map<Socket, String> getLoggedInUsers() {
+    public static Map<Socket, String> getLoggedInUsers() {
         return new ConcurrentHashMap<>(loggedInUsers);
     }
 }
+

@@ -11,6 +11,6 @@ public class Main {
     public static void main(String[] agrs) {
         Dotenv dotenv = Dotenv.load();
         Connector.initConnector(dotenv);
-        new Server(Logger.getInstance(), SocketController.getInstance()).start(8081);
+        new Server().start(8081);
     }
 }
