@@ -7,13 +7,11 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
-import db.Connector;
 import db.UserDao;
 import handler.AuthHandler;
 import util.Logger;
+import util.SocketController;
 
 public class Server {
     private ServerSocket serverSocket;
@@ -78,7 +76,7 @@ public class Server {
                 logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
             } finally {
                 try {
-                    loggedInUsers.remove(clientSocket);
+                    SocketController.getInstance().getLoggedInUsers().remove(clientSocket);
                     if (in != null) {
                         in.close();
                     }
@@ -104,19 +102,19 @@ public class Server {
                    return authHandler.handleRegister(parts);
                 }
                 case "LOGIN": {
-                    return authHandler.handleLogin(parts,clientSocket,loggedInUsers);
+                    return authHandler.handleLogin(parts,clientSocket, SocketController.getInstance().getLoggedInUsers());
                 }
                 case "LOGOUT": {
-                    loggedInUsers.remove(clientSocket);
+                    SocketController.getInstance().getLoggedInUsers().remove(clientSocket);
                     return "LOGOUT";
                 }
                 case "GET_USERS_ONLINE": {
-                    java.util.Set<String> names = new java.util.LinkedHashSet<>(loggedInUsers.values());
+                    java.util.Set<String> names = new java.util.LinkedHashSet<>(SocketController.getInstance().getLoggedInUsers().values());
                     String payload = String.join(",", names);
                     return payload;
                 }
                 case "DISCONNECT": {
-                    loggedInUsers.remove(clientSocket);
+                    SocketController.getInstance().getLoggedInUsers().remove(clientSocket);
                     try {
                         clientSocket.close();
                     } catch (IOException ignored) {}
