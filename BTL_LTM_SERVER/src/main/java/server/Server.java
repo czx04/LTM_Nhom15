@@ -17,7 +17,7 @@ import util.Logger;
 
 public class Server {
     private ServerSocket serverSocket;
-    private final Map<Socket, String> loggedInUsers = new HashMap<>();
+
     private final Logger logger;
 
     public Server(Logger logger) {
@@ -104,18 +104,7 @@ public class Server {
                    return authHandler.handleRegister(parts);
                 }
                 case "LOGIN": {
-                    if (parts.length < 3) return "SAI FORMAT";
-                    System.out.println(loggedInUsers.get(clientSocket));
-                    String username = parts[1];
-                    String password = parts[2];
-                    boolean ok = userDao.verifyLogin(username, password);
-                    if (ok) {
-                        loggedInUsers.put(clientSocket, username);
-                        System.out.println(clientSocket);
-                        return "LOGGEDIN";
-                    } else {
-                        return "FAILLOGIN";
-                    }
+                    return authHandler.handleLogin(parts,clientSocket,loggedInUsers);
                 }
                 case "LOGOUT": {
                     loggedInUsers.remove(clientSocket);
