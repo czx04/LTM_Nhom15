@@ -8,10 +8,11 @@ import java.util.Map;
 public class SocketControl {
     private static Map<Socket, String> loggedInUsers;
 
-    public static void init(){
+    public static SocketControl init(){
         if (loggedInUsers == null){
             loggedInUsers = new HashMap<>();
         }
+        return new SocketControl();
     }
 
     public Map<Socket, String> getLoggedInUsers() {

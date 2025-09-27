@@ -7,21 +7,22 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
-import db.Connector;
 import db.UserDao;
 import handler.AuthHandler;
+import handler.HomeHanlder;
 import util.Logger;
+import util.SocketControl;
 
 public class Server {
     private ServerSocket serverSocket;
 
     private final Logger logger;
+    private SocketControl socket;
 
-    public Server(Logger logger) {
+    public Server(Logger logger, SocketControl socket) {
         this.logger = logger;
+        this.socket = socket;
     }
 
     public void start(int port) {
@@ -50,6 +51,7 @@ public class Server {
 
         private UserDao userDao;
         private AuthHandler authHandler;
+        private HomeHanlder homeHanlder;
 
         public ClientHandler(Socket socket) {
             this.clientSocket = socket;
@@ -62,6 +64,7 @@ public class Server {
                 out = new BufferedWriter(new PrintWriter(clientSocket.getOutputStream()));
                 userDao = new UserDao();
                 authHandler = new AuthHandler(userDao);
+                homeHanlder = new HomeHanlder(userDao);
                 System.out.println("Client connected");
                 String line;
                 while ((line = in.readLine()) != null) {
@@ -78,7 +81,7 @@ public class Server {
                 logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
             } finally {
                 try {
-                    loggedInUsers.remove(clientSocket);
+                    socket.removeLoggedInUsers(clientSocket);
                     if (in != null) {
                         in.close();
                     }
@@ -104,23 +107,13 @@ public class Server {
                    return authHandler.handleRegister(parts);
                 }
                 case "LOGIN": {
-                    return authHandler.handleLogin(parts,clientSocket,loggedInUsers);
+                    return authHandler.handleLogin(parts,clientSocket,socket.getLoggedInUsers());
                 }
                 case "LOGOUT": {
-                    loggedInUsers.remove(clientSocket);
-                    return "LOGOUT";
+                    return authHandler.handleLogout(clientSocket,socket.getLoggedInUsers());
                 }
                 case "GET_USERS_ONLINE": {
-                    java.util.Set<String> names = new java.util.LinkedHashSet<>(loggedInUsers.values());
-                    String payload = String.join(",", names);
-                    return payload;
-                }
-                case "DISCONNECT": {
-                    loggedInUsers.remove(clientSocket);
-                    try {
-                        clientSocket.close();
-                    } catch (IOException ignored) {}
-                    return null;
+                    return homeHanlder.getUserOnl(socket.getLoggedInUsers().values());
                 }
                 default:
                     return "LOI GI DO ROI";

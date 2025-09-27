@@ -6,6 +6,7 @@ import java.awt.*;
 import javax.swing.*;
 
 import UI.Login;
+import util.Constants;
 
 public class Client {
     private Socket clientSocket;
@@ -48,9 +49,9 @@ public class Client {
     public JFrame frame;
     public void AppSwing() {
         SwingUtilities.invokeLater(() -> {
-            frame = new JFrame("Game tính nhanh");
+            frame = new JFrame(Constants.TITLE_GAME);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(800, 600);
+            frame.setSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
             frame.setLocationRelativeTo(null);
             
             // Đóng connection khi đóng ứng dụng
@@ -66,40 +67,5 @@ public class Client {
             frame.setVisible(true);
         });
     }
-
-//    private void menu() throws IOException {
-//        Scanner scanner = new Scanner(System.in);
-//        while (running) {
-//            System.out.println("1. Đăng ký");
-//            System.out.println("2. Đăng nhập");
-//            System.out.println("3. Đăng xuất");
-//            System.out.println("4. Xem số người online");
-//            System.out.println("0. Thoát");
-//            System.out.print("Chọn: ");
-//            String choice = scanner.nextLine();
-//            switch (choice) {
-//                case "1":
-//                    handleRegister(scanner);
-//                    break;
-//                case "2":
-//                    handleLogin(scanner);
-//                    break;
-//                case "3":
-//                    sendLine("LOGOUT");
-//                    System.out.println(in.readLine());
-//                    break;
-//                case "4":
-//                    sendLine("GET_USERS_ONLINE");
-//                    System.out.println(in.readLine());
-//                    break;
-//                case "0":
-//                    sendLine("DISCONNECT");
-//                    running = false;
-//                    break;
-//                default:
-//                    System.out.println("Lựa chọn không hợp lệ");
-//            }
-//        }
-//    }
 
 }

@@ -1,28 +1,37 @@
 package UI;
 
 import controller.Auth;
+import util.Constants;
+import util.ResponseHandler;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
-public class Home {
-    private final Auth auth = new Auth();
-    public void showHome(JFrame frame, BufferedReader in, BufferedWriter out,String username) {
+public class Home extends BaseUI {
+    private String username;
+    
+    public void showHome(JFrame frame, BufferedReader in, BufferedWriter out, String username) {
+        setupFrame(frame, in, out);
+        this.username = username;
+        showUI(frame, in, out);
+    }
+    
+    public void showUI(JFrame frame, BufferedReader in, BufferedWriter out) {
         JPanel container = new JPanel(new BorderLayout());
 
         JPanel leftPanel = new JPanel(new BorderLayout());
         JLabel welcomeTitle = new JLabel("Chào mừng đến với trò chơi Đố Chữ!", SwingConstants.CENTER);
 
 
-        welcomeTitle.setFont(new Font("Arial", Font.BOLD, 22));
+        welcomeTitle.setFont(new Font(Constants.FONT_FAMILY, Font.BOLD, Constants.FONT_SIZE_TITLE));
         JTextArea welcomeBody = new JTextArea();
         welcomeBody.setEditable(false);
         welcomeBody.setLineWrap(true);
         welcomeBody.setWrapStyleWord(true);
-        welcomeBody.setFont(new Font("Arial", Font.PLAIN, 16));
+        welcomeBody.setFont(new Font(Constants.FONT_FAMILY, Font.PLAIN, Constants.FONT_SIZE_BODY));
         welcomeBody.setText(
                 "Hello anh em đến với trò chơi xếp chữ của tui!\n" +
                 "- Xem ngừoi onl ở bên phải\n" +
@@ -36,12 +45,8 @@ public class Home {
         leftPanel.add(welcomeTextWrapper, BorderLayout.CENTER);
 
         JPanel rightPanel = new JPanel(new BorderLayout());
-        JPanel rightHeader = new JPanel(new BorderLayout());
-        JLabel title = new JLabel("Đang online", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 22));
         JButton logoutBtn = new JButton("Đăng xuất");
-        rightHeader.add(title, BorderLayout.CENTER);
-        rightHeader.add(logoutBtn, BorderLayout.EAST);
+        JPanel rightHeader = createHeaderPanel("Đang online", logoutBtn);
         rightPanel.add(rightHeader, BorderLayout.NORTH);
 
 
@@ -56,87 +61,35 @@ public class Home {
 
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-        splitPane.setResizeWeight(0.8); // 80% cho panel trái
+        splitPane.setResizeWeight(Constants.SPLIT_PANE_WEIGHT / 100.0);
         splitPane.setContinuousLayout(true);
         container.add(splitPane, BorderLayout.CENTER);
 
-
         refreshBtn.addActionListener(e -> {
-            refreshBtn.setEnabled(false);
-            SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
-                @Override
-                protected String doInBackground() {
-                    return auth.getUsersOnline(in, out);
-                }
-
-                @Override
-                protected void done() {
-                    refreshBtn.setEnabled(true);
-                    try {
-                        String response = get();
-                        listModel.clear();
-                        if (response != null && !response.trim().isEmpty()) {
-                            String[] parts = response.split("\\|", 2);
-                            String body = parts.length > 1 ? parts[1] : response;
-                            String[] users = body.split(",");
-                            ArrayList<String> list = new ArrayList<>(Arrays.asList(users));
-                            list.remove(username);
-                            users = list.toArray(new String[0]);
-                            for (String user : users) {
-                                user = user.trim();
-                                if (!user.isEmpty()) {
-                                    listModel.addElement(user);
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null,
-                                "Lỗi tải danh sách người dùng",
-                                "Lỗi",
-                                JOptionPane.ERROR_MESSAGE);
+            executeAsyncTask(refreshBtn,
+                () -> auth.getUsersOnline(in, out),
+                response -> {
+                    listModel.clear();
+                    List<String> users = ResponseHandler.parseUsersOnline(response, username);
+                    for (String user : users) {
+                        listModel.addElement(user);
                     }
-                }
-            };
-            worker.execute();
+                },
+                ex -> ResponseHandler.handleLoadUsersError()
+            );
         });
 
         // chạy lần đầu
         refreshBtn.doClick();
 
         logoutBtn.addActionListener(e -> {
-            logoutBtn.setEnabled(false);
-            SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
-                @Override
-                protected String doInBackground() {
-                    return auth.handleLogout(in, out);
-                }
-
-                @Override
-                protected void done() {
-                    logoutBtn.setEnabled(true);
-                    try {
-                        String res = get();
-                        if (res != null && res.startsWith("LOGOUT")) {
-                            new Login().showLogin(frame, in, out);
-                        } else {
-                            JOptionPane.showMessageDialog(null,
-                                    "Đăng xuất thất bại",
-                                    "Lỗi",
-                                    JOptionPane.ERROR_MESSAGE);
-                        }
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null,
-                                "Lỗi kết nối máy chủ",
-                                "Lỗi",
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            };
-            worker.execute();
+            executeAsyncTask(logoutBtn,
+                () -> auth.handleLogout(in, out),
+                result -> ResponseHandler.handleLogoutResponse(result, frame, in, out),
+                ex -> ResponseHandler.handleConnectionError()
+            );
         });
 
-        frame.setContentPane(container);
-        frame.revalidate();
-        frame.repaint();
+        refreshFrame(container);
     }
 }

@@ -4,7 +4,6 @@ import db.UserDao;
 
 import java.net.Socket;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class AuthHandler {
@@ -14,8 +13,6 @@ public class AuthHandler {
         this.userDao = userDao;
     }
 
-
-
     public String handleRegister(String[] parts) throws SQLException {
         if (parts.length < 3) return "SAI FORMAT";
         String username = parts[1];
@@ -23,7 +20,6 @@ public class AuthHandler {
         boolean ok = userDao.createUser(username, password);
         return ok ? "REGISTED" : "EXIST";
     }
-
     public String handleLogin(String[] parts,Socket clientSocket,Map<Socket, String> loggedInUsers) throws SQLException {
         if (parts.length < 3) return "SAI FORMAT";
         System.out.println(loggedInUsers.get(clientSocket));
@@ -37,5 +33,10 @@ public class AuthHandler {
         } else {
             return "FAILLOGIN";
         }
+    }
+
+    public String handleLogout(Socket clientSocket, Map<Socket, String> loggedInUsers) throws SQLException {
+        loggedInUsers.remove(clientSocket);
+        return "LOGOUT";
     }
 }
