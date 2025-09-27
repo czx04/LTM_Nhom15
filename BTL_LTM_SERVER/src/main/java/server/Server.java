@@ -12,16 +12,15 @@ import db.UserDao;
 import handler.AuthHandler;
 import handler.HomeHanlder;
 import util.Logger;
-import util.SocketControl;
 import util.SocketController;
 
 public class Server {
     private ServerSocket serverSocket;
 
     private final Logger logger;
-    private SocketControl socket;
+    private SocketController socket;
 
-    public Server(Logger logger, SocketControl socket) {
+    public Server(Logger logger, SocketController socket) {
         this.logger = logger;
         this.socket = socket;
     }
@@ -82,7 +81,7 @@ public class Server {
                 logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
             } finally {
                 try {
-                    socket.removeLoggedInUsers(clientSocket);
+                    socket.removeLoggedInUser(clientSocket);
                     if (in != null) {
                         in.close();
                     }
