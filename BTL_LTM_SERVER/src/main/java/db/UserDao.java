@@ -11,7 +11,7 @@ public class UserDao {
             return false;
         }
         String insert = "INSERT INTO users(username, password) VALUES(?, ?)";
-        try (Connection c = Connect.getConnection();
+        try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(insert)) {
             ps.setString(1, username);
             ps.setString(2, passwordPlain);
@@ -21,7 +21,7 @@ public class UserDao {
 
     public boolean verifyLogin(String username, String passwordPlain) throws SQLException {
         String select = "SELECT password FROM users WHERE username = ?";
-        try (Connection c = Connect.getConnection();
+        try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(select)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
@@ -34,7 +34,7 @@ public class UserDao {
 
     public Integer findUserIdByUsername(String username) throws SQLException {
         String select = "SELECT id FROM users WHERE username = ?";
-        try (Connection c = Connect.getConnection();
+        try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(select)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
