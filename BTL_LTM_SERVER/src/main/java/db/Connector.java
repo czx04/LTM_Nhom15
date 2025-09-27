@@ -8,7 +8,6 @@ public class Connector {
     public static Connection getConnection() {
         return conn;
     }
-
     public static void init() throws SQLException {
         if (conn == null) {
             String url = System.getenv("DB_URL");

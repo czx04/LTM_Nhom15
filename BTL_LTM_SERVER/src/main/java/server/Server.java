@@ -1,14 +1,28 @@
 package server;
-import java.io.*;
-import java.net.Socket;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import db.Connector;
+import db.UserDao;
+import handler.AuthHandler;
+import util.Logger;
+
 public class Server {
     private ServerSocket serverSocket;
     private final Map<Socket, String> loggedInUsers = new HashMap<>();
+    private final Logger logger;
+
+    public Server(Logger logger) {
+        this.logger = logger;
+    }
 
     public void start(int port) {
         System.out.println("Server starting!!!");
@@ -18,22 +32,24 @@ public class Server {
                 new ClientHandler(serverSocket.accept()).start();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Lỗi khi khởi động server trên port " + port, e);
         } finally {
             try {
                 if (serverSocket != null) {
                     serverSocket.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Lỗi khi đóng server socket", e);
             }
         }
     }
     private class ClientHandler extends Thread {
-        private Socket clientSocket;
+        private final Socket clientSocket;
         private BufferedWriter out;
         private BufferedReader in;
-        private db.UserDao userDao;
+
+        private UserDao userDao;
+        private AuthHandler authHandler;
 
         public ClientHandler(Socket socket) {
             this.clientSocket = socket;
@@ -44,7 +60,8 @@ public class Server {
             try {
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 out = new BufferedWriter(new PrintWriter(clientSocket.getOutputStream()));
-                userDao = new db.UserDao();
+                userDao = new UserDao();
+                authHandler = new AuthHandler(userDao);
                 System.out.println("Client connected");
                 String line;
                 while ((line = in.readLine()) != null) {
@@ -56,9 +73,9 @@ public class Server {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Lỗi I/O khi xử lý client", e);
             } catch (SQLException e) {
-                e.printStackTrace();
+                logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
             } finally {
                 try {
                     loggedInUsers.remove(clientSocket);
@@ -72,7 +89,7 @@ public class Server {
                         clientSocket.close();
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("Lỗi khi đóng kết nối client", e);
                 }
             }
 
@@ -84,11 +101,7 @@ public class Server {
             String action = parts[0];
             switch (action) {
                 case "REGISTER": {
-                    if (parts.length < 3) return "SAI FORMAT";
-                    String username = parts[1];
-                    String password = parts[2];
-                    boolean ok = userDao.createUser(username, password);
-                    return ok ? "REGISTED" : "EXIST";
+                   return authHandler.handleRegister(parts);
                 }
                 case "LOGIN": {
                     if (parts.length < 3) return "SAI FORMAT";

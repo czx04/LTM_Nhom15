@@ -1,6 +1,7 @@
 package server;
 
 import db.Connector;
+import util.Logger;
 import java.sql.SQLException;
 
 public class Main {
@@ -10,6 +11,6 @@ public class Main {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        new Server().start(8081);
+        new Server(Logger.getInstance()).start(8081);
     }
 }
