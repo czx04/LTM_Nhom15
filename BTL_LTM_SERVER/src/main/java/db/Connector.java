@@ -10,7 +10,7 @@ public class Connector {
     }
 
     public static void init() throws SQLException {
-        if (conn != null) {
+        if (conn == null) {
             String url = System.getenv("DB_URL");
             String user = System.getenv("DB_USER");
             String password = System.getenv("DB_PASSWORD");
