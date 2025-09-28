@@ -21,14 +21,12 @@ public class UsersListPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     }
 
-    public void setUsers(List<String> users) {
+    public void setUsers(List<String> users,List<String> allUsers) {
         removeAll();
-
         for (String user : users) {
             JPanel panel = new JPanel(new BorderLayout());
             JLabel label = new JLabel(user);
             JButton button = new JButton("Solo");
-
             button.addActionListener(e -> {
                 System.out.println("Clicked Solo for " + user);
                 try {
@@ -45,7 +43,15 @@ public class UsersListPanel extends JPanel {
             add(panel);
         }
 
+        for (String user : allUsers) {
+            JPanel panel = new JPanel(new BorderLayout());
+            JLabel label = new JLabel(user);
+            panel.add(label, BorderLayout.WEST);
+            panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+            add(panel);
+        }
         revalidate();
         repaint();
     }
+
 }
