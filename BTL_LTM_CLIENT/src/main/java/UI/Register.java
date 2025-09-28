@@ -1,6 +1,5 @@
 package UI;
 
-import controller.Auth;
 import util.Constants;
 import util.ResponseHandler;
 import util.InputValidator;
@@ -66,12 +65,15 @@ public class Register extends BaseUI {
                         Constants.TITLE_WARNING, JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            
+
             executeAsyncTask(regisButton,
-                () -> auth.handleRegister(username, password, in, out),
-                result -> ResponseHandler.handleRegisterResponse(result, username, frame, in, out),
+                () -> authController.handleRegister(username, password, in, out),
+                result -> {
+                    System.out.println("Register request sent: " + result);
+                },
                 ex -> ResponseHandler.handleConnectionError()
             );
+
         });
 
         refreshFrame(logoutPanel);

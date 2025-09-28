@@ -1,6 +1,5 @@
 package UI;
 
-import controller.Auth;
 import util.Constants;
 import util.ResponseHandler;
 import util.InputValidator;
@@ -67,8 +66,10 @@ public class Login extends BaseUI {
             }
             
             executeAsyncTask(loginButton, 
-                () -> auth.handleLogin(username, password, in, out),
-                result -> ResponseHandler.handleLoginResponse(result, username, frame, in, out),
+                () -> authController.handleLogin(username, password, in, out),
+                result -> {
+                    System.out.println("Login request sent: " + result);
+                },
                 ex -> ResponseHandler.handleConnectionError()
             );
         });

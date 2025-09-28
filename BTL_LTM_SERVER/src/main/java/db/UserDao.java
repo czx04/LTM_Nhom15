@@ -23,7 +23,6 @@ public class UserDao {
 
     public boolean verifyLogin(String username, String passwordPlain) throws SQLException {
         String select = "SELECT password_hash FROM users WHERE username = ?";
-        Logger.info(select);
         try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(select)) {
             ps.setString(1, username);

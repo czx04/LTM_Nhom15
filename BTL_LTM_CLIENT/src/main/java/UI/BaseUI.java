@@ -1,9 +1,9 @@
 package UI;
 
-import controller.Auth;
+import controller.AuthController;
+import controller.HomeController;
 import util.Constants;
 import util.ResponseHandler;
-import util.InputValidator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,13 +12,15 @@ import java.io.BufferedWriter;
 
 public abstract class BaseUI {
     
-    protected Auth auth;
+    protected AuthController authController;
+    protected HomeController homeController;
     protected JFrame frame;
     protected BufferedReader in;
     protected BufferedWriter out;
     
     public BaseUI() {
-        this.auth = new Auth();
+        this.authController = new AuthController();
+        this.homeController = new HomeController();
     }
     
     protected void setupFrame(JFrame frame, BufferedReader in, BufferedWriter out) {
@@ -98,16 +100,7 @@ public abstract class BaseUI {
             ResponseHandler.handleConnectionError();
         }
     }
-    
-    protected void showHome(String username) {
-        try {
-            Home home = new Home();
-            home.showHome(frame, in, out, username);
-        } catch (Exception e) {
-            ResponseHandler.handleConnectionError();
-        }
-    }
-    
+
     protected void showRegister() {
         try {
             Register register = new Register();

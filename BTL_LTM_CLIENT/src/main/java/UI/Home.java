@@ -1,21 +1,21 @@
 package UI;
 
-import controller.Auth;
+import controller.HomeController;
 import util.Constants;
-import util.ResponseHandler;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.util.List;
 
 public class Home extends BaseUI {
     private String username;
-    
-    public void showHome(JFrame frame, BufferedReader in, BufferedWriter out, String username) {
+    private HomeController externalHomeController; // HomeController từ Client
+
+    public void showHome(JFrame frame, BufferedReader in, BufferedWriter out, String username, HomeController homeController) {
         setupFrame(frame, in, out);
         this.username = username;
+        this.externalHomeController = homeController;
         showUI(frame, in, out);
     }
     
@@ -49,12 +49,12 @@ public class Home extends BaseUI {
         JPanel rightHeader = createHeaderPanel("Đang online", logoutBtn);
         rightPanel.add(rightHeader, BorderLayout.NORTH);
 
-
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        JList<String> usersList = new JList<>(listModel);
-        JScrollPane scrollPane = new JScrollPane(usersList);
+        HomeController controllerToUse = externalHomeController != null ? externalHomeController : homeController;
+        
+        UsersListPanel usersPanel = new UsersListPanel(controllerToUse, in, out);
+        controllerToUse.setUsersPanel(usersPanel);
+        JScrollPane scrollPane = new JScrollPane(usersPanel);
         rightPanel.add(scrollPane, BorderLayout.CENTER);
-
 
         JButton refreshBtn = new JButton("Làm mới");
         rightPanel.add(refreshBtn, BorderLayout.SOUTH);
@@ -66,30 +66,17 @@ public class Home extends BaseUI {
         container.add(splitPane, BorderLayout.CENTER);
 
         refreshBtn.addActionListener(e -> {
-            executeAsyncTask(refreshBtn,
-                () -> auth.getUsersOnline(in, out),
-                response -> {
-                    listModel.clear();
-                    List<String> users = ResponseHandler.parseUsersOnline(response, username);
-                    for (String user : users) {
-                        listModel.addElement(user);
-                    }
-                },
-                ex -> ResponseHandler.handleLoadUsersError()
-            );
+            controllerToUse.getUsersOnline(in, out);
         });
 
         // chạy lần đầu
         refreshBtn.doClick();
 
         logoutBtn.addActionListener(e -> {
-            executeAsyncTask(logoutBtn,
-                () -> auth.handleLogout(in, out),
-                result -> ResponseHandler.handleLogoutResponse(result, frame, in, out),
-                ex -> ResponseHandler.handleConnectionError()
-            );
+                authController.handleLogout(in, out);
         });
 
         refreshFrame(container);
+
     }
 }

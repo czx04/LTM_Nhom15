@@ -1,5 +1,7 @@
 package util;
 
+import org.example.Client;
+
 import javax.swing.JOptionPane;
 import java.util.ArrayList;
 
@@ -71,7 +73,7 @@ public class ResponseHandler {
         }
     }
     
-    public static java.util.List<String> parseUsersOnline(String response, String currentUser) {
+    public static java.util.List<String> parseUsersOnline(Client client, String response, String currentUser) {
         java.util.List<String> users = new ArrayList<>();
         
         if (response != null && !response.trim().isEmpty()) {

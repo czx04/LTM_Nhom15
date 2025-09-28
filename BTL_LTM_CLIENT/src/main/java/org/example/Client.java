@@ -2,18 +2,21 @@ package org.example;
 
 import java.io.*;
 import java.net.Socket;
-import java.awt.*;
 import javax.swing.*;
 
 import UI.Login;
+import handler.EventHandler;
 import util.Constants;
+import controller.HomeController;
 
 public class Client {
     private Socket clientSocket;
     public BufferedReader in;
     public BufferedWriter out;
+    private EventHandler eventHandler = new EventHandler();
+    public HomeController homeController = new HomeController();
 
-    private Login login = new Login();
+    private final Login login = new Login();
 
     public void startConnection(String ip, int port) {
         try {
@@ -21,11 +24,11 @@ public class Client {
             out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             System.out.println("Kết nối server thành công.\n");
-//            menu();
+            startListening();
+            System.out.println("Sẵn sàng lắng nghe sự kiện");
             AppSwing();
         } catch (IOException e) {
             e.printStackTrace();
-            // Chỉ đóng connection khi có lỗi kết nối
             closeConnection();
         }
     }
@@ -67,5 +70,41 @@ public class Client {
             frame.setVisible(true);
         });
     }
+    private void startListening() {
+        Thread listenerThread = new Thread(() -> {
+            try {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    System.out.println("Server: " + line);
+                    handleEvent(line);
+                }
+            } catch (IOException e) {
+                System.out.println("Mất kết nối với server.");
+            } finally {
+                closeConnection();
+            }
+        });
+        listenerThread.setDaemon(true);
+        listenerThread.start();
+    }
 
+    private void handleEvent(String line) {
+        System.out.println("Message From Client: " + line);
+        try {
+            String[] parts = line.split("\\|");
+            switch (parts[0]) {
+                case "LOGIN" -> eventHandler.handleLoginResponse(this, parts);
+                case "REGISTER" -> eventHandler.handleRegisterResponse(this, parts);
+                case "LOGOUT" -> eventHandler.handleLogoutResponse(this, parts);
+                case "USER_ONLINE" -> eventHandler.parseUsersOnline(this,parts);
+                case "INVITE" -> eventHandler.handleInvite(this,parts);
+                case "REJECT" -> System.out.println("Invite rejected.");
+                default -> System.out.println("Unknown event");
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling event: " + line);
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
