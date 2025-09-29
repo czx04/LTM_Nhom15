@@ -7,6 +7,7 @@ import util.SocketController;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.*;
 
 public class HomeHandler {
@@ -17,11 +18,18 @@ public class HomeHandler {
         this.userDao = userDao;
     }
 
-    public String getUserOnl(ClientHandler client) {
+    public String getUserOnl(ClientHandler client) throws SQLException {
         Set<String> names = new HashSet<>(SocketController.getLoggedInUsers().values());
         String currentUser = SocketController.getUserByClient(client);
+        System.out.println(names);
         names.remove(currentUser);
-        return "USER_ONLINE|" + String.join(",",names);
+        List<String> allUsers = userDao.getAllUsers();
+        allUsers.remove(currentUser);
+        allUsers.removeAll(names);
+        System.out.println(names);
+        System.out.println(allUsers);
+
+        return "USER_ONLINE|" + String.join(",",names) + "|" + String.join(",",allUsers);
     }
 
     public String sendInvite(ClientHandler invitorClient, String[] receiver) {
@@ -36,5 +44,20 @@ public class HomeHandler {
             }
         }
         return "INVITE|OK";
+    }
+
+    public void broadcastUserStatus(String username, String status) {
+        Map<String, ClientHandler> clients = SocketController.getUsersClients();
+        for (Map.Entry<String, ClientHandler> entry : clients.entrySet()) {
+            String otherUser = entry.getKey();
+            ClientHandler ch = entry.getValue();
+            if (!otherUser.equals(username) && ch != null) {
+                try {
+                    ch.writeEvent(String.join("|", "USER_STATUS", username, status));
+                } catch (IOException e) {
+                    Logger.error("Broadcast error: " + e.getMessage(), e);
+                }
+            }
+        }
     }
 }

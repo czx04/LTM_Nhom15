@@ -163,6 +163,21 @@ public class EventHandler {
         return users;
     }
 
+    public void handleUserStatus(Client client, String[] parts) {
+        // format: USER_STATUS|<username>|ONLINE|OFFLINE
+        if (parts.length >= 3) {
+            SwingUtilities.invokeLater(() -> {
+                if (client != null && client.homeController != null && client.out != null) {
+                    try {
+                        client.homeController.getUsersOnline(client.in, client.out);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
+
     public static void handleConnectionError() {
         showError(Constants.MSG_CONNECTION_ERROR);
     }

@@ -4,10 +4,7 @@ import db.UserDao;
 import server.ClientHandler;
 import util.SocketController;
 
-import java.net.Socket;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.logging.SocketHandler;
 
 public class AuthHandler {
     private final UserDao userDao;
@@ -32,6 +29,11 @@ public class AuthHandler {
         if (ok) {
             SocketController.addLoggedInUser(clientSocket, username);
             System.out.println(clientSocket);
+            // Broadcast ONLINE
+            try {
+                // HomeHandler được khởi tạo trong ClientHandler. Lấy qua clientSocket nếu cần.
+                // Ở đây chỉ trả về response; broadcast sẽ được gọi từ ClientHandler sau khi ghi response.
+            } catch (Exception ignored) {}
             return "LOGIN|LOGGEDIN" + "|" + username;
         } else {
             return "LOGIN|FAILLOGIN" + "|" + username;
@@ -39,7 +41,9 @@ public class AuthHandler {
     }
 
     public String handleLogout(ClientHandler clientSocket) throws SQLException {
+        String username = SocketController.getUserByClient(clientSocket);
         SocketController.removeLoggedInUser(clientSocket);
-        return "LOGOUT";
+        // Trả về để ClientHandler có thể phản hồi; broadcast OFFLINE sẽ thực hiện ở ClientHandler
+        return "LOGOUT" + (username != null ? ("|" + username) : "");
     }
 }

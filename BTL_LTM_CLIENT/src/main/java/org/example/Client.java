@@ -98,6 +98,7 @@ public class Client {
                 case "LOGOUT" -> eventHandler.handleLogoutResponse(this, parts);
                 case "USER_ONLINE" -> eventHandler.parseUsersOnline(this,parts);
                 case "INVITE" -> eventHandler.handleInvite(this,parts);
+                case "USER_STATUS" -> eventHandler.handleUserStatus(this, parts);
                 case "REJECT" -> System.out.println("Invite rejected.");
                 default -> System.out.println("Unknown event");
             }
