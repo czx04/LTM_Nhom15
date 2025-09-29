@@ -77,9 +77,9 @@ public class ResponseHandler {
         java.util.List<String> users = new ArrayList<>();
         
         if (response != null && !response.trim().isEmpty()) {
-            String[] parts = response.split("\\" + Constants.COMMAND_SEPARATOR, 2);
+            String[] parts = response.split("\\" + "|", 2);
             String body = parts.length > 1 ? parts[1] : response;
-            String[] userArray = body.split(Constants.USER_SEPARATOR);
+            String[] userArray = body.split(",");
             
             for (String user : userArray) {
                 String trimmedUser = user.trim();

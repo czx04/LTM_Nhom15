@@ -96,7 +96,7 @@ public class EventHandler {
     }
 
     public void handleLogoutResponse(Client client, String[] response) {
-        if (response != null && response[1].startsWith(Constants.RESPONSE_LOGOUT)) {
+        if (response != null && response[0].startsWith(Constants.RESPONSE_LOGOUT)) {
             // Navigate back to Login screen
             try {
                 Class<?> loginClass = Class.forName("UI.Login");
@@ -115,29 +115,43 @@ public class EventHandler {
 
     public java.util.List<String> parseUsersOnline(Client client,String[] response) {
         java.util.List<String> users = new ArrayList<>();
+        java.util.List<String> allUser = new ArrayList<>();
 
         System.out.println("Parsing users online: " + java.util.Arrays.toString(response));
 
-        if (response.length > 1 && response[1] != null && !response[1].trim().isEmpty()) {
+        if (response[1] != null && !response[1].trim().isEmpty()) {
             String body = response[1];
-            String[] userArray = body.split(Constants.USER_SEPARATOR);
-
+            String[] userArray = body.split(",");
             for (String user : userArray) {
                 if (!user.trim().isEmpty()) {
                     users.add(user.trim());
                 }
             }
         } else {
-            System.out.println("No users data in response or response too short");
+            System.out.println("No users onl data in response or response too short");
+        }
+
+        if (response[2] != null && !response[2].trim().isEmpty()) {
+            String body = response[2];
+            String[] userArray = body.split(",");
+            for (String user : userArray) {
+                if (!user.trim().isEmpty()) {
+                    allUser.add(user.trim());
+                }
+            }
+
+        } else {
+            System.out.println("No users onl data in response or response too short");
         }
         
         System.out.println("Parsed users: " + users);
+        System.out.println("Parsed all users: " + allUser);
         
         SwingUtilities.invokeLater(() -> {
             try {
                 if (client.homeController != null) {
                     System.out.println("Calling homeController.onUsersOnlineReceived with " + users.size() + " users");
-                    client.homeController.onUsersOnlineReceived(users);
+                    client.homeController.onUsersOnlineReceived(users,allUser);
                 } else {
                     System.out.println("homeController is null!");
                 }
@@ -146,7 +160,6 @@ public class EventHandler {
                 e.printStackTrace();
             }
         });
-        
         return users;
     }
 

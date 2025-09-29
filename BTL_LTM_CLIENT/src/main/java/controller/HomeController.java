@@ -30,13 +30,13 @@ public class HomeController {
         }
     }
     
-    public void onUsersOnlineReceived(List<String> users) {
+    public void onUsersOnlineReceived(List<String> users,List<String> allUsers) {
         System.out.println("HomeController.onUsersOnlineReceived called with users: " + users);
         System.out.println("usersPanel is null: " + (usersPanel == null));
         
         if (usersPanel != null) {
             System.out.println("Calling usersPanel.setUsers()");
-            usersPanel.setUsers(users);
+            usersPanel.setUsers(users,allUsers);
         } else {
             System.out.println("usersPanel is null - cannot update UI");
         }

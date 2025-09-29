@@ -46,7 +46,7 @@ public class Home extends BaseUI {
 
         JPanel rightPanel = new JPanel(new BorderLayout());
         JButton logoutBtn = new JButton("Đăng xuất");
-        JPanel rightHeader = createHeaderPanel("Đang online", logoutBtn);
+        JPanel rightHeader = createHeaderPanel("Người chơi", logoutBtn);
         rightPanel.add(rightHeader, BorderLayout.NORTH);
 
         HomeController controllerToUse = externalHomeController != null ? externalHomeController : homeController;

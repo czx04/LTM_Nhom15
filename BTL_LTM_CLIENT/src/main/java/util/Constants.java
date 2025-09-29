@@ -40,8 +40,5 @@ public class Constants {
     public static final int FONT_SIZE_TITLE = 22;
     public static final int FONT_SIZE_HEADER = 18;
     public static final int FONT_SIZE_BODY = 16;
-    
-    // Separators
-    public static final String COMMAND_SEPARATOR = "|";
-    public static final String USER_SEPARATOR = ",";
+
 }
