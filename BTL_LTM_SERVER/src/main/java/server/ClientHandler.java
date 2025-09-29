@@ -33,9 +33,25 @@ public class ClientHandler extends Thread {
             System.out.println("Client connected");
             String line;
             while ((line = in.readLine()) != null) {
+                System.out.println(line);
                 String response = handleCommand(line);
                 if (response != null) {
                     this.writeEvent(response);
+                    // Nếu là LOGIN hoặc LOGOUT thì broadcast trạng thái
+                    try {
+                        String[] parts = response.split("\\|");
+                        if (parts.length > 0 && homeHandler != null) {
+                            if ("LOGIN".equals(parts[0]) && parts.length >= 3 && "LOGGEDIN".equals(parts[1])) {
+                                String username = parts[2];
+                                homeHandler.broadcastUserStatus(username, "ONLINE");
+                            } else if ("LOGOUT".equals(parts[0])) {
+                                String username = parts.length >= 2 ? parts[1] : SocketController.getUserByClient(this);
+                                if (username != null) {
+                                    homeHandler.broadcastUserStatus(username, "OFFLINE");
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
                 }
             }
         } catch (IOException e) {
@@ -44,7 +60,11 @@ public class ClientHandler extends Thread {
             Logger.error("Lỗi cơ sở dữ liệu khi xử lý client", e);
         } finally {
             try {
+                String username = SocketController.getUserByClient(this);
                 SocketController.removeLoggedInUser(this);
+                if (username != null && homeHandler != null) {
+                    homeHandler.broadcastUserStatus(username, "OFFLINE");
+                }
                 if (in != null) {
                     in.close();
                 }

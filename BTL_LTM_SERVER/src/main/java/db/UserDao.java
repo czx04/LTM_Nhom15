@@ -3,6 +3,8 @@ package db;
 import util.Logger;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDao {
     public UserDao() throws SQLException {
@@ -33,9 +35,8 @@ public class UserDao {
             }
         }
     }
-
     public Integer findUserIdByUsername(String username) throws SQLException {
-        String select = "SELECT id FROM users WHERE username = ?";
+        String select = "SELECT user_id FROM users WHERE username = ?";
         try (Connection c = Connector.getConnection();
              PreparedStatement ps = c.prepareStatement(select)) {
             ps.setString(1, username);
@@ -48,6 +49,18 @@ public class UserDao {
         }
     }
 
+    public List<String> getAllUsers() throws SQLException {
+        String sql = "SELECT username FROM users";
+        try (Connection conn = Connector.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            List<String> usernames = new ArrayList<>();
+            while (rs.next()) {
+                usernames.add(rs.getString(1));
+            }
+            return usernames;
+        }
+    }
+
 }
-
-
