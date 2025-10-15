@@ -46,7 +46,9 @@ public class Home extends BaseUI {
 
         JPanel rightPanel = new JPanel(new BorderLayout());
         JButton logoutBtn = new JButton("Đăng xuất");
+        JButton rankBtn = new JButton("Xem BXH");
         JPanel rightHeader = createHeaderPanel("Người chơi", logoutBtn);
+        rightHeader.add(rankBtn, BorderLayout.WEST);
         rightPanel.add(rightHeader, BorderLayout.NORTH);
 
         HomeController controllerToUse = externalHomeController != null ? externalHomeController : homeController;
@@ -74,6 +76,10 @@ public class Home extends BaseUI {
 
         logoutBtn.addActionListener(e -> {
                 authController.handleLogout(in, out);
+        });
+
+        rankBtn.addActionListener(e -> {
+            controllerToUse.getRank(in, out, "");
         });
 
         refreshFrame(container);

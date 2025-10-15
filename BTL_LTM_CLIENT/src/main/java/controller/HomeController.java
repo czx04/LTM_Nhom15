@@ -47,4 +47,13 @@ public class HomeController {
         out.newLine();
         out.flush();
     }
+
+    public void getRank(BufferedReader in, BufferedWriter out, String query) {
+        try {
+            if (query == null) query = "";
+            sendLine("GET_RANK|" + query, out);
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+    }
 }

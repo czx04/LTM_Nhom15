@@ -1,6 +1,5 @@
 package db;
 
-import util.Logger;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -60,6 +59,32 @@ public class UserDao {
                 usernames.add(rs.getString(1));
             }
             return usernames;
+        }
+    }
+
+    public List<String[]> getLeaderboardAll(String search) throws SQLException {
+        boolean hasSearch = search != null && !search.isEmpty();
+        String base = "SELECT u.username, u.elo_rating, u.total_score, COALESCE(COUNT(mh.history_id), 0) AS matches_played FROM users u LEFT JOIN match_history mh ON u.user_id = mh.user_id";
+        String where = hasSearch ? " WHERE u.username LIKE ?" : "";
+        String group = " GROUP BY u.user_id, u.username, u.elo_rating, u.total_score";
+        String order = " ORDER BY u.elo_rating DESC, u.total_score DESC";
+        String sql = base + where + group + order;
+        try (Connection conn = Connector.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (hasSearch) {
+                stmt.setString(1, "%" + search + "%");
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<String[]> rows = new ArrayList<>();
+                while (rs.next()) {
+                    String username = rs.getString(1);
+                    String elo = String.valueOf(rs.getInt(2));
+                    String total = String.valueOf(rs.getInt(3));
+                    String matches = String.valueOf(rs.getInt(4));
+                    rows.add(new String[]{username, elo, total, matches});
+                }
+                return rows;
+            }
         }
     }
 
