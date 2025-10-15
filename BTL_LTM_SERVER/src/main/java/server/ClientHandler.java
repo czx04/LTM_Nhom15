@@ -89,6 +89,7 @@ public class ClientHandler extends Thread {
             case "LOGOUT" -> authHandler.handleLogout(this);
             case "GET_USERS_ONLINE" -> homeHandler.getUserOnl(this);
             case "INVITE" -> homeHandler.sendInvite(this, parts);
+            case "GET_RANK" -> homeHandler.getLeaderboard(parts);
             default -> "LOI GI DO ROI";
         };
     }

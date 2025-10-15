@@ -6,7 +6,6 @@ import util.Logger;
 import util.SocketController;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -58,6 +57,22 @@ public class HomeHandler {
                     Logger.error("Broadcast error: " + e.getMessage(), e);
                 }
             }
+        }
+    }
+
+    public String getLeaderboard(String[] parts) {
+        try {
+            String q = (parts != null && parts.length >= 2) ? parts[1] : null;
+            java.util.List<String[]> rows = userDao.getLeaderboardAll(q);
+            java.util.List<String> mapped = new java.util.ArrayList<>();
+            for (String[] r : rows) {
+                // username:elo:total:matches
+                mapped.add(String.join(":", r[0], r[1], r[2], r[3]));
+            }
+            return "RANK|" + String.join(",", mapped);
+        } catch (Exception e) {
+            Logger.error("getLeaderboard error", e);
+            return "RANK|ERROR";
         }
     }
 }

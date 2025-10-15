@@ -197,4 +197,33 @@ public class EventHandler {
                 Constants.TITLE_ERROR,
                 JOptionPane.ERROR_MESSAGE);
     }
+
+    public void handleRank(Client client, String[] parts) {
+        // format: RANK|username:elo:total:matches,username2:elo:total:matches
+        java.util.List<String[]> rows = new java.util.ArrayList<>();
+        if (parts.length >= 2 && parts[1] != null && !"ERROR".equals(parts[1])) {
+            String[] entries = parts[1].split(",");
+            for (String entry : entries) {
+                if (entry == null || entry.isEmpty()) continue;
+                String[] cols = entry.split(":");
+                if (cols.length >= 4) {
+                    rows.add(new String[]{cols[0], cols[1], cols[2], cols[3]});
+                }
+            }
+        }
+        SwingUtilities.invokeLater(() -> {
+            try {
+                Class<?> rankClass = Class.forName("UI.Rank");
+                Object rank = rankClass.getDeclaredConstructor().newInstance();
+                rankClass.getMethod("showRank", javax.swing.JFrame.class,
+                                java.io.BufferedReader.class,
+                                java.io.BufferedWriter.class,
+                                java.util.List.class)
+                        .invoke(rank, client.frame, client.in, client.out, rows);
+            } catch (Exception e) {
+                e.printStackTrace();
+                handleConnectionError();
+            }
+        });
+    }
 }
