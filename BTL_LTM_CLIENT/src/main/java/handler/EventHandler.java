@@ -12,7 +12,7 @@ import util.Constants;
 
 public class EventHandler {
 
-    public void handleInvite(Client client, String[] parts){
+    public void handleInvite(Client client, String[] parts) {
         if (parts.length > 1) {
             if (parts[1].equals("OK") || parts[1].equals("NOT_OK")) {
                 return;
@@ -24,8 +24,7 @@ public class EventHandler {
                         invitor + " đã mời bạn solo. Bạn có chấp nhận không?",
                         "Lời mời từ " + invitor,
                         JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE
-                );
+                        JOptionPane.QUESTION_MESSAGE);
 
                 if (choice == JOptionPane.YES_OPTION) {
                     // TODO: gửi phản hồi ACCEPT về server
@@ -49,7 +48,6 @@ public class EventHandler {
             });
         }
     }
-
 
     public void handleLoginResponse(Client client, String[] response) {
         if (Constants.RESPONSE_LOGGEDIN.equals(response[1])) {
@@ -113,7 +111,7 @@ public class EventHandler {
         }
     }
 
-    public java.util.List<String> parseUsersOnline(Client client,String[] response) {
+    public java.util.List<String> parseUsersOnline(Client client, String[] response) {
         java.util.List<String> users = new ArrayList<>();
         java.util.List<String> allUser = new ArrayList<>();
 
@@ -143,15 +141,15 @@ public class EventHandler {
         } else {
             System.out.println("No users onl data in response or response too short");
         }
-        
+
         System.out.println("Parsed users: " + users);
         System.out.println("Parsed all users: " + allUser);
-        
+
         SwingUtilities.invokeLater(() -> {
             try {
                 if (client.homeController != null) {
                     System.out.println("Calling homeController.onUsersOnlineReceived with " + users.size() + " users");
-                    client.homeController.onUsersOnlineReceived(users,allUser);
+                    client.homeController.onUsersOnlineReceived(users, allUser);
                 } else {
                     System.out.println("homeController is null!");
                 }
@@ -204,7 +202,8 @@ public class EventHandler {
         if (parts.length >= 2 && parts[1] != null && !"ERROR".equals(parts[1])) {
             String[] entries = parts[1].split(",");
             for (String entry : entries) {
-                if (entry == null || entry.isEmpty()) continue;
+                if (entry == null || entry.isEmpty())
+                    continue;
                 String[] cols = entry.split(":");
                 if (cols.length >= 4) {
                     rows.add(new String[]{cols[0], cols[1], cols[2], cols[3]});
@@ -226,4 +225,57 @@ public class EventHandler {
             }
         });
     }
+
+    public void handleJoinMatch(Client client, String[] parts) {
+        // format: JOIN_MATCH|OK
+        if (parts.length >= 2 && "OK".equalsIgnoreCase(parts[1])) {
+            System.out.println("Join match success — waiting for MATCH_START data...");
+        } else {
+            System.out.println("Join match failed!");
+        }
+    }
+
+    public void handleMatchStart(Client client, String[] parts) {
+        // format: MATCH_START|match_id=1|questions=[{...}]|time=03:00|scoreOpponent=0
+        try {
+            String matchId = parts[1].split("=")[1];
+            String questionsJson = parts[2].substring(parts[2].indexOf('=') + 1);
+            String time = parts[3].split("=")[1];
+            String scoreOpponent = parts[4].split("=")[1];
+
+            // 🔹 Dùng 1 instance duy nhất
+            UI.MatchUI matchUI = new UI.MatchUI();
+            client.currentUI = matchUI;
+
+            // 🔹 Hiển thị giao diện trên luồng Swing
+            SwingUtilities.invokeLater(() -> {
+                matchUI.showMatch(client.frame, client.in, client.out,
+                        matchId, questionsJson, time, scoreOpponent);
+            });
+
+            System.out.println("Match started: " + matchId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi khi khởi tạo trận đấu: " + e.getMessage());
+        }
+    }
+
+    public void handleAnswerResult(Client client, String[] parts) {
+        // format: ANSWER_RESULT|OK  hoặc ANSWER_RESULT|FAIL
+        if (parts.length < 2) return;
+
+        boolean correct = "OK".equalsIgnoreCase(parts[1]);
+
+        if (client.currentUI instanceof UI.MatchUI matchUI) {
+            if (correct) {
+                matchUI.increaseMyScore();
+                JOptionPane.showMessageDialog(null, "🎉 Chính xác! +1 điểm");
+            } else {
+                matchUI.notifyWrong();
+            }
+        }
+    }
+
+
 }

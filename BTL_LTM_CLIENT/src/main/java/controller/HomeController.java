@@ -9,11 +9,11 @@ import UI.UsersListPanel;
 
 public class HomeController {
     private UsersListPanel usersPanel;
-    
+
     public void setUsersPanel(UsersListPanel usersPanel) {
         this.usersPanel = usersPanel;
     }
-    
+
     public void getUsersOnline(BufferedReader in, BufferedWriter out) {
         try {
             sendLine("GET_USERS_ONLINE", out);
@@ -22,21 +22,21 @@ public class HomeController {
         }
     }
 
-    public void sendInvite(String user,BufferedReader in, BufferedWriter out) throws IOException {
+    public void sendInvite(String user, BufferedReader in, BufferedWriter out) throws IOException {
         try {
             sendLine("INVITE|" + user, out);
         } catch (IOException e) {
             System.out.println(e);
         }
     }
-    
-    public void onUsersOnlineReceived(List<String> users,List<String> allUsers) {
+
+    public void onUsersOnlineReceived(List<String> users, List<String> allUsers) {
         System.out.println("HomeController.onUsersOnlineReceived called with users: " + users);
         System.out.println("usersPanel is null: " + (usersPanel == null));
-        
+
         if (usersPanel != null) {
             System.out.println("Calling usersPanel.setUsers()");
-            usersPanel.setUsers(users,allUsers);
+            usersPanel.setUsers(users, allUsers);
         } else {
             System.out.println("usersPanel is null - cannot update UI");
         }
@@ -50,10 +50,21 @@ public class HomeController {
 
     public void getRank(BufferedReader in, BufferedWriter out, String query) {
         try {
-            if (query == null) query = "";
+            if (query == null)
+                query = "";
             sendLine("GET_RANK|" + query, out);
         } catch (IOException e) {
             System.out.println(e);
         }
     }
+
+    public void joinMatch(BufferedReader in, BufferedWriter out) {
+        try {
+            sendLine("JOIN_MATCH", out);
+            System.out.println("Đã gửi yêu cầu vào trận tới server.");
+        } catch (IOException e) {
+            System.out.println("Lỗi khi gửi yêu cầu vào trận: " + e.getMessage());
+        }
+    }
+
 }
