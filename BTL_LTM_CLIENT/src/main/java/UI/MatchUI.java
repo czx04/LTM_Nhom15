@@ -21,6 +21,8 @@ public class MatchUI extends BaseUI {
     private int myScore = 0;
     private MatchController matchController;
     private Set<Integer> answeredQuestions = new HashSet<>();
+    private Timer countdownTimer;
+    private int remainingSeconds = 0;
 
     /**
      * Hàm override bắt buộc (từ BaseUI)
@@ -36,18 +38,19 @@ public class MatchUI extends BaseUI {
      * Hàm được gọi khi nhận được dữ liệu MATCH_START từ server
      */
     public void showMatch(JFrame frame, BufferedReader in, BufferedWriter out,
-                          String matchId, String questionsJson, String time, String scoreOpponent) {
+            String matchId, String questionsJson, String time, String scoreOpponent) {
         setupFrame(frame, in, out);
         this.questions = new JSONArray(questionsJson);
         this.matchController = new MatchController(in, out, this);
         showUI(frame, in, out, time, scoreOpponent);
+        startCountdown(time);
     }
 
     /**
      * Hàm chính để hiển thị giao diện trận đấu
      */
     public void showUI(JFrame frame, BufferedReader in, BufferedWriter out,
-                       String time, String scoreOpponent) {
+            String time, String scoreOpponent) {
         JPanel container = new JPanel(new BorderLayout(10, 10));
         container.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -156,7 +159,6 @@ public class MatchUI extends BaseUI {
         }
     }
 
-
     /**
      * Server gửi MATCH_UPDATE (thời gian và điểm đối thủ)
      */
@@ -169,7 +171,8 @@ public class MatchUI extends BaseUI {
      * Khi người chơi trả lời đúng
      */
     public void increaseMyScore() {
-        if (myScoreLabel == null) return;
+        if (myScoreLabel == null)
+            return;
         myScore++;
 
         // ✅ Đánh dấu câu hiện tại là đã trả lời đúng
@@ -179,7 +182,6 @@ public class MatchUI extends BaseUI {
 
         myScoreLabel.setText("⭐ Điểm của bạn: " + myScore);
     }
-
 
     /**
      * Khi người chơi trả lời sai
@@ -193,5 +195,65 @@ public class MatchUI extends BaseUI {
      */
     public MatchController getMatchController() {
         return matchController;
+    }
+
+    /**
+     * Bắt đầu đếm ngược thời gian
+     */
+    private void startCountdown(String timeStr) {
+        // Dừng timer cũ nếu có
+        if (countdownTimer != null && countdownTimer.isRunning()) {
+            countdownTimer.stop();
+        }
+
+        // Parse thời gian từ format "MM:SS"
+        remainingSeconds = parseTimeToSeconds(timeStr);
+
+        // Tạo timer mới đếm ngược mỗi giây
+        countdownTimer = new Timer(1000, e -> {
+            if (remainingSeconds > 0) {
+                remainingSeconds--;
+                String formattedTime = formatSecondsToTime(remainingSeconds);
+                timeLabel.setText("⏱ Thời gian: " + formattedTime);
+            } else {
+                // Hết thời gian
+                countdownTimer.stop();
+                JOptionPane.showMessageDialog(null, "⏰ Hết thời gian!");
+            }
+        });
+
+        countdownTimer.start();
+    }
+
+    /**
+     * Chuyển đổi thời gian từ format "MM:SS" thành số giây
+     */
+    private int parseTimeToSeconds(String timeStr) {
+        try {
+            String[] parts = timeStr.split(":");
+            int minutes = Integer.parseInt(parts[0]);
+            int seconds = Integer.parseInt(parts[1]);
+            return minutes * 60 + seconds;
+        } catch (Exception e) {
+            return 180; // Mặc định 3 phút nếu parse lỗi
+        }
+    }
+
+    /**
+     * Chuyển đổi số giây thành format "MM:SS"
+     */
+    private String formatSecondsToTime(int totalSeconds) {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
+    /**
+     * Dừng timer khi trận đấu kết thúc
+     */
+    public void stopTimer() {
+        if (countdownTimer != null && countdownTimer.isRunning()) {
+            countdownTimer.stop();
+        }
     }
 }
