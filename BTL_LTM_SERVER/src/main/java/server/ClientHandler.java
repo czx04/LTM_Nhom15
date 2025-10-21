@@ -51,7 +51,8 @@ public class ClientHandler extends Thread {
                                 }
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         } catch (IOException e) {
@@ -80,6 +81,7 @@ public class ClientHandler extends Thread {
         }
 
     }
+
     private String handleCommand(String line) throws SQLException {
         Logger.info("Message From Client: " + line);
         String[] parts = line.split("\\|");
@@ -90,9 +92,12 @@ public class ClientHandler extends Thread {
             case "GET_USERS_ONLINE" -> homeHandler.getUserOnl(this);
             case "INVITE" -> homeHandler.sendInvite(this, parts);
             case "GET_RANK" -> homeHandler.getLeaderboard(parts);
+            case "JOIN_MATCH" -> homeHandler.getMatchDisplay(this, parts);
+            case "SUBMIT_ANSWER" -> homeHandler.checkAnswer(this, parts);
             default -> "LOI GI DO ROI";
         };
     }
+
     public void writeEvent(String response) throws IOException {
         this.out.write(response);
         this.out.newLine();

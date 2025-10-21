@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import javax.swing.*;
 
+import UI.BaseUI;
 import UI.Login;
 import handler.EventHandler;
 import util.Constants;
@@ -15,7 +16,7 @@ public class Client {
     public BufferedWriter out;
     private EventHandler eventHandler = new EventHandler();
     public HomeController homeController = new HomeController();
-
+    public BaseUI currentUI;
     private final Login login = new Login();
 
     public void startConnection(String ip, int port) {
@@ -50,13 +51,14 @@ public class Client {
     }
 
     public JFrame frame;
+
     public void AppSwing() {
         SwingUtilities.invokeLater(() -> {
             frame = new JFrame(Constants.TITLE_GAME);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
             frame.setLocationRelativeTo(null);
-            
+
             // Đóng connection khi đóng ứng dụng
             frame.addWindowListener(new java.awt.event.WindowAdapter() {
                 @Override
@@ -66,10 +68,11 @@ public class Client {
                 }
             });
             // mở màn Login trước
-            login.showLogin(frame,in,out);
+            login.showLogin(frame, in, out);
             frame.setVisible(true);
         });
     }
+
     private void startListening() {
         Thread listenerThread = new Thread(() -> {
             try {
@@ -96,10 +99,13 @@ public class Client {
                 case "LOGIN" -> eventHandler.handleLoginResponse(this, parts);
                 case "REGISTER" -> eventHandler.handleRegisterResponse(this, parts);
                 case "LOGOUT" -> eventHandler.handleLogoutResponse(this, parts);
-                case "USER_ONLINE" -> eventHandler.parseUsersOnline(this,parts);
-                case "INVITE" -> eventHandler.handleInvite(this,parts);
+                case "USER_ONLINE" -> eventHandler.parseUsersOnline(this, parts);
+                case "INVITE" -> eventHandler.handleInvite(this, parts);
                 case "USER_STATUS" -> eventHandler.handleUserStatus(this, parts);
                 case "RANK" -> eventHandler.handleRank(this, parts);
+                case "JOIN_MATCH" -> eventHandler.handleJoinMatch(this, parts);
+                case "MATCH_START" -> eventHandler.handleMatchStart(this, parts);
+                case "ANSWER_RESULT" -> eventHandler.handleAnswerResult(this, parts);
                 case "REJECT" -> System.out.println("Invite rejected.");
                 default -> System.out.println("Unknown event");
             }
