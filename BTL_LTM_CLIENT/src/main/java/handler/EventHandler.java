@@ -52,14 +52,16 @@ public class EventHandler {
     public void handleLoginResponse(Client client, String[] response) {
         if (Constants.RESPONSE_LOGGEDIN.equals(response[1])) {
             System.out.println("LOGIN OK");
+            // Lưu username vào client
+            client.currentUsername = response[2];
             try {
                 Class<?> homeClass = Class.forName("UI.Home");
                 Object home = homeClass.getDeclaredConstructor().newInstance();
                 homeClass.getMethod("showHome", javax.swing.JFrame.class,
-                                java.io.BufferedReader.class,
-                                java.io.BufferedWriter.class,
-                                String.class,
-                                controller.HomeController.class)
+                        java.io.BufferedReader.class,
+                        java.io.BufferedWriter.class,
+                        String.class,
+                        controller.HomeController.class)
                         .invoke(home, client.frame, client.in, client.out, response[2], client.homeController);
             } catch (Exception e) {
                 System.err.println("Lỗi khi navigate đến Home screen: " + e.getMessage());
@@ -73,15 +75,17 @@ public class EventHandler {
 
     public void handleRegisterResponse(Client client, String[] response) {
         if (Constants.RESPONSE_REGISTED.equals(response[1])) {
+            // Lưu username vào client
+            client.currentUsername = response[2];
             // Navigate to Home screen
             try {
                 Class<?> homeClass = Class.forName("UI.Home");
                 Object home = homeClass.getDeclaredConstructor().newInstance();
                 homeClass.getMethod("showHome", javax.swing.JFrame.class,
-                                java.io.BufferedReader.class,
-                                java.io.BufferedWriter.class,
-                                String.class,
-                                controller.HomeController.class)
+                        java.io.BufferedReader.class,
+                        java.io.BufferedWriter.class,
+                        String.class,
+                        controller.HomeController.class)
                         .invoke(home, client.frame, client.in, client.out, response[2], client.homeController);
             } catch (Exception e) {
                 showError(Constants.MSG_CONNECTION_ERROR);
@@ -100,8 +104,8 @@ public class EventHandler {
                 Class<?> loginClass = Class.forName("UI.Login");
                 Object login = loginClass.getDeclaredConstructor().newInstance();
                 loginClass.getMethod("showLogin", javax.swing.JFrame.class,
-                                java.io.BufferedReader.class,
-                                java.io.BufferedWriter.class)
+                        java.io.BufferedReader.class,
+                        java.io.BufferedWriter.class)
                         .invoke(login, client.frame, client.in, client.out);
             } catch (Exception e) {
                 showError(Constants.MSG_CONNECTION_ERROR);
@@ -206,7 +210,7 @@ public class EventHandler {
                     continue;
                 String[] cols = entry.split(":");
                 if (cols.length >= 4) {
-                    rows.add(new String[]{cols[0], cols[1], cols[2], cols[3]});
+                    rows.add(new String[] { cols[0], cols[1], cols[2], cols[3] });
                 }
             }
         }
@@ -215,9 +219,9 @@ public class EventHandler {
                 Class<?> rankClass = Class.forName("UI.Rank");
                 Object rank = rankClass.getDeclaredConstructor().newInstance();
                 rankClass.getMethod("showRank", javax.swing.JFrame.class,
-                                java.io.BufferedReader.class,
-                                java.io.BufferedWriter.class,
-                                java.util.List.class)
+                        java.io.BufferedReader.class,
+                        java.io.BufferedWriter.class,
+                        java.util.List.class)
                         .invoke(rank, client.frame, client.in, client.out, rows);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -247,6 +251,11 @@ public class EventHandler {
             UI.MatchUI matchUI = new UI.MatchUI();
             client.currentUI = matchUI;
 
+            // 🔹 Set username cho MatchUI
+            if (client.currentUsername != null) {
+                matchUI.setUsername(client.currentUsername);
+            }
+
             // 🔹 Hiển thị giao diện trên luồng Swing
             SwingUtilities.invokeLater(() -> {
                 matchUI.showMatch(client.frame, client.in, client.out,
@@ -262,8 +271,9 @@ public class EventHandler {
     }
 
     public void handleAnswerResult(Client client, String[] parts) {
-        // format: ANSWER_RESULT|OK  hoặc ANSWER_RESULT|FAIL
-        if (parts.length < 2) return;
+        // format: ANSWER_RESULT|OK hoặc ANSWER_RESULT|FAIL
+        if (parts.length < 2)
+            return;
 
         boolean correct = "OK".equalsIgnoreCase(parts[1]);
 
@@ -277,5 +287,90 @@ public class EventHandler {
         }
     }
 
+    public void handleMatchEnd(Client client, String[] parts) {
+        // format:
+        // MATCH_END|winner=username|winnerScore=5|loser=username2|loserScore=3|eloChange=20
+        // hoặc: MATCH_END|draw=true|score=5|eloChange=0
+        try {
+            if (parts.length < 2) {
+                JOptionPane.showMessageDialog(null, "Lỗi nhận kết quả trận đấu");
+                return;
+            }
+
+            StringBuilder resultMessage = new StringBuilder();
+            resultMessage.append("=== KẾT QUẢ TRẬN ĐẤU ===\n\n");
+
+            // Parse các trường kết quả
+            String winner = null;
+            String loser = null;
+            int winnerScore = 0;
+            int loserScore = 0;
+            int eloChange = 0;
+            boolean isDraw = false;
+
+            for (int i = 1; i < parts.length; i++) {
+                String[] keyValue = parts[i].split("=");
+                if (keyValue.length != 2)
+                    continue;
+
+                String key = keyValue[0];
+                String value = keyValue[1];
+
+                switch (key) {
+                    case "winner":
+                        winner = value;
+                        break;
+                    case "winnerScore":
+                        winnerScore = Integer.parseInt(value);
+                        break;
+                    case "loser":
+                        loser = value;
+                        break;
+                    case "loserScore":
+                        loserScore = Integer.parseInt(value);
+                        break;
+                    case "eloChange":
+                        eloChange = Integer.parseInt(value);
+                        break;
+                    case "draw":
+                        isDraw = "true".equalsIgnoreCase(value);
+                        break;
+                    case "score":
+                        winnerScore = Integer.parseInt(value);
+                        break;
+                }
+            }
+
+            // Hiển thị kết quả
+            if (isDraw) {
+                resultMessage.append("🤝 HÒA!\n\n");
+                resultMessage.append("Điểm: ").append(winnerScore).append("\n");
+                resultMessage.append("Thay đổi ELO: ").append(eloChange >= 0 ? "+" : "").append(eloChange);
+            } else if (winner != null) {
+                resultMessage.append("🏆 NGƯỜI THẮNG: ").append(winner).append("\n");
+                resultMessage.append("   Điểm: ").append(winnerScore).append("\n\n");
+                resultMessage.append("😢 NGƯỜI THUA: ").append(loser).append("\n");
+                resultMessage.append("   Điểm: ").append(loserScore).append("\n\n");
+                resultMessage.append("Thay đổi ELO của bạn: ").append(eloChange >= 0 ? "+" : "").append(eloChange);
+            } else {
+                resultMessage.append("Trận đấu kết thúc!");
+            }
+
+            // Dừng timer nếu đang chạy
+            if (client.currentUI instanceof UI.MatchUI matchUI) {
+                matchUI.stopTimer();
+            }
+
+            // Hiển thị kết quả
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(null, resultMessage.toString(),
+                        "Kết Quả Trận Đấu", JOptionPane.INFORMATION_MESSAGE);
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi khi hiển thị kết quả: " + e.getMessage());
+        }
+    }
 
 }

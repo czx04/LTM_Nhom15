@@ -94,6 +94,7 @@ public class ClientHandler extends Thread {
             case "GET_RANK" -> homeHandler.getLeaderboard(parts);
             case "JOIN_MATCH" -> homeHandler.getMatchDisplay(this, parts);
             case "SUBMIT_ANSWER" -> homeHandler.checkAnswer(this, parts);
+            case "MATCH_END" -> homeHandler.handleMatchEnd(this, parts);
             default -> "LOI GI DO ROI";
         };
     }

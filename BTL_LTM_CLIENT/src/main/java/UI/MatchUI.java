@@ -23,6 +23,8 @@ public class MatchUI extends BaseUI {
     private Set<Integer> answeredQuestions = new HashSet<>();
     private Timer countdownTimer;
     private int remainingSeconds = 0;
+    private String matchId;
+    private String username;
 
     /**
      * Hàm override bắt buộc (từ BaseUI)
@@ -39,11 +41,36 @@ public class MatchUI extends BaseUI {
      */
     public void showMatch(JFrame frame, BufferedReader in, BufferedWriter out,
             String matchId, String questionsJson, String time, String scoreOpponent) {
+        System.out.println("MatchUI.showMatch called: matchId=" + matchId);
         setupFrame(frame, in, out);
         this.questions = new JSONArray(questionsJson);
+        this.matchId = matchId;
         this.matchController = new MatchController(in, out, this);
+
+        // Set matchInfo ngay sau khi tạo matchController
+        if (this.username != null) {
+            System.out.println("Username already set, calling setMatchInfo: " + this.username);
+            this.matchController.setMatchInfo(this.matchId, this.username);
+        } else {
+            System.out.println("Username not set yet, will be set later");
+        }
+
         showUI(frame, in, out, time, scoreOpponent);
         startCountdown(time);
+    }
+
+    /**
+     * Set username cho trận đấu
+     */
+    public void setUsername(String username) {
+        System.out.println("MatchUI.setUsername called: username=" + username);
+        this.username = username;
+        if (matchController != null) {
+            System.out.println("Setting matchInfo: matchId=" + matchId + ", username=" + username);
+            matchController.setMatchInfo(matchId, username);
+        } else {
+            System.out.println("matchController is null, will set later");
+        }
     }
 
     /**
@@ -218,7 +245,7 @@ public class MatchUI extends BaseUI {
             } else {
                 // Hết thời gian
                 countdownTimer.stop();
-                JOptionPane.showMessageDialog(null, "⏰ Hết thời gian!");
+                handleTimeUp();
             }
         });
 
@@ -255,5 +282,27 @@ public class MatchUI extends BaseUI {
         if (countdownTimer != null && countdownTimer.isRunning()) {
             countdownTimer.stop();
         }
+    }
+
+    /**
+     * Xử lý khi hết thời gian
+     */
+    private void handleTimeUp() {
+        JOptionPane.showMessageDialog(null, "⏰ Hết thời gian!\nĐang gửi kết quả...",
+                "Hết Giờ", JOptionPane.INFORMATION_MESSAGE);
+
+        // Gửi kết quả về server
+        if (matchController != null) {
+            matchController.endMatch(myScore);
+        } else {
+            JOptionPane.showMessageDialog(null, "Lỗi: Không thể gửi kết quả trận đấu!");
+        }
+    }
+
+    /**
+     * Lấy điểm hiện tại của người chơi
+     */
+    public int getMyScore() {
+        return myScore;
     }
 }
