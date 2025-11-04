@@ -116,6 +116,7 @@ public class ClientHandler extends Thread {
             case "SUBMIT_ANSWER" -> homeHandler.checkAnswer(this, parts);
             case "LEAVE_MATCH" -> homeHandler.handleLeaveMatch(this);
             case "FINISH_MATCH" -> homeHandler.handleFinishMatch(this, parts);
+            case "MATCH_END" -> homeHandler.handleMatchEnd(this, parts);
             default -> "LOI GI DO ROI";
         };
     }

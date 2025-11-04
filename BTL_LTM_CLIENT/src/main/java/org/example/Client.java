@@ -18,6 +18,7 @@ public class Client {
     public HomeController homeController = new HomeController();
     public BaseUI currentUI;
     private final Login login = new Login();
+    public String currentUsername; // Lưu username của người dùng đang đăng nhập
 
     public void startConnection(String ip, int port) {
         try {
@@ -107,6 +108,7 @@ public class Client {
                 case "JOIN_MATCH" -> eventHandler.handleJoinMatch(this, parts);
                 case "MATCH_START" -> eventHandler.handleMatchStart(this, parts);
                 case "ANSWER_RESULT" -> eventHandler.handleAnswerResult(this, parts);
+                case "MATCH_END" -> eventHandler.handleMatchEnd(this, parts);
                 case "OPPONENT_SCORED" -> eventHandler.handleOpponentScored(this, parts);
                 case "OPPONENT_LEFT" -> eventHandler.handleOpponentLeft(this, parts);
                 case "REJECT" -> System.out.println("Invite rejected.");
