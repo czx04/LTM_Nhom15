@@ -297,7 +297,6 @@ public class HomeHandler {
             // Gửi kết quả cho người chơi
             // Nếu đúng, cộng điểm cho người chơi
             if (correct) {
-                String username = SocketController.getUserByClient(client);
                 if (username != null) {
                     int matchId = 1; // TODO: có thể lấy từ context
                     Map<String, Integer> scores = activeMatches.get(matchId);

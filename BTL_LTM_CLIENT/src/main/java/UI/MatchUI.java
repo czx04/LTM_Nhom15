@@ -211,6 +211,26 @@ public class MatchUI extends BaseUI {
     }
 
     /**
+     * Khi đối thủ trả lời đúng
+     */
+    public void increaseOpponentScore() {
+        if (opponentScoreLabel == null)
+            return;
+
+        // Lấy điểm hiện tại từ label và tăng lên 1
+        String currentText = opponentScoreLabel.getText();
+        try {
+            // Extract số từ text "👤 Điểm đối thủ: X"
+            String[] parts = currentText.split(": ");
+            int currentScore = Integer.parseInt(parts[1]);
+            currentScore++;
+            opponentScoreLabel.setText("👤 Điểm đối thủ: " + currentScore);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật điểm đối thủ: " + e.getMessage());
+        }
+    }
+
+    /**
      * Khi người chơi trả lời sai
      */
     public void notifyWrong() {
