@@ -49,6 +49,20 @@ public class EventHandler {
         }
     }
 
+    public void handleInviteRejected(Client client, String[] parts) {
+        // format: INVITE_REJECTED|message
+        if (parts.length >= 2) {
+            String message = parts[1];
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(
+                        client.frame,
+                        message,
+                        "Lời mời bị từ chối",
+                        JOptionPane.INFORMATION_MESSAGE);
+            });
+        }
+    }
+
     public void handleLoginResponse(Client client, String[] response) {
         if (Constants.RESPONSE_LOGGEDIN.equals(response[1])) {
             System.out.println("LOGIN OK");
@@ -372,5 +386,40 @@ public class EventHandler {
             JOptionPane.showMessageDialog(null, "Lỗi khi hiển thị kết quả: " + e.getMessage());
         }
     }
+    public void handleOpponentScored(Client client, String[] parts) {
+        // format: OPPONENT_SCORED|username
+        if (parts.length < 2) return;
+
+        String opponentName = parts[1];
+
+        if (client.currentUI instanceof UI.MatchUI matchUI) {
+            SwingUtilities.invokeLater(() -> {
+                matchUI.increaseOpponentScore();
+                System.out.println("Đối thủ " + opponentName + " đã ghi điểm!");
+            });
+        }
+    }
+
+    public void handleOpponentLeft(Client client, String[] parts) {
+        // format: OPPONENT_LEFT|message
+        if (parts.length < 2) return;
+
+        String message = parts[1];
+
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(
+                    client.frame,
+                    message + "\nBạn thắng do đối thủ rời trận!",
+                    "Đối thủ rời trận",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            // Có thể quay về màn hình Home hoặc cho người chơi tiếp tục
+            if (client.currentUI instanceof UI.MatchUI matchUI) {
+                // Đánh dấu là thắng do đối thủ rời trận
+                System.out.println("Match ended - opponent left");
+            }
+        });
+    }
+
 
 }
