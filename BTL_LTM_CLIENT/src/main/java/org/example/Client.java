@@ -101,11 +101,14 @@ public class Client {
                 case "LOGOUT" -> eventHandler.handleLogoutResponse(this, parts);
                 case "USER_ONLINE" -> eventHandler.parseUsersOnline(this, parts);
                 case "INVITE" -> eventHandler.handleInvite(this, parts);
+                case "INVITE_REJECTED" -> eventHandler.handleInviteRejected(this, parts);
                 case "USER_STATUS" -> eventHandler.handleUserStatus(this, parts);
                 case "RANK" -> eventHandler.handleRank(this, parts);
                 case "JOIN_MATCH" -> eventHandler.handleJoinMatch(this, parts);
                 case "MATCH_START" -> eventHandler.handleMatchStart(this, parts);
                 case "ANSWER_RESULT" -> eventHandler.handleAnswerResult(this, parts);
+                case "OPPONENT_SCORED" -> eventHandler.handleOpponentScored(this, parts);
+                case "OPPONENT_LEFT" -> eventHandler.handleOpponentLeft(this, parts);
                 case "REJECT" -> System.out.println("Invite rejected.");
                 default -> System.out.println("Unknown event");
             }

@@ -62,6 +62,24 @@ public class ClientHandler extends Thread {
         } finally {
             try {
                 String username = SocketController.getUserByClient(this);
+
+                // Xử lý khi người chơi đang trong trận
+                if (username != null) {
+                    Integer matchId = SocketController.getPlayerMatchId(username);
+                    if (matchId != null && homeHandler != null) {
+                        // Thông báo cho đối thủ
+                        ClientHandler opponent = SocketController.getOpponentInMatch(username);
+                        if (opponent != null) {
+                            try {
+                                opponent.writeEvent("OPPONENT_LEFT|" + username + " đã ngắt kết nối");
+                            } catch (IOException ignored) {}
+                        }
+                        // Xóa khỏi trận
+                        SocketController.removePlayerFromMatch(username);
+                        Logger.info("Player " + username + " disconnected from match " + matchId);
+                    }
+                }
+
                 SocketController.removeLoggedInUser(this);
                 if (username != null && homeHandler != null) {
                     homeHandler.broadcastUserStatus(username, "OFFLINE");
@@ -91,9 +109,13 @@ public class ClientHandler extends Thread {
             case "LOGOUT" -> authHandler.handleLogout(this);
             case "GET_USERS_ONLINE" -> homeHandler.getUserOnl(this);
             case "INVITE" -> homeHandler.sendInvite(this, parts);
+            case "INVITE_ACCEPT" -> homeHandler.handleInviteAccept(this, parts);
+            case "INVITE_REJECT" -> homeHandler.handleInviteReject(this, parts);
             case "GET_RANK" -> homeHandler.getLeaderboard(parts);
             case "JOIN_MATCH" -> homeHandler.getMatchDisplay(this, parts);
             case "SUBMIT_ANSWER" -> homeHandler.checkAnswer(this, parts);
+            case "LEAVE_MATCH" -> homeHandler.handleLeaveMatch(this);
+            case "FINISH_MATCH" -> homeHandler.handleFinishMatch(this, parts);
             default -> "LOI GI DO ROI";
         };
     }
