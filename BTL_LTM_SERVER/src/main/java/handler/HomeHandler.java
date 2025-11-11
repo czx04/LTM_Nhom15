@@ -177,7 +177,8 @@ public class HomeHandler {
             Logger.error("Error handling invite accept", e);
             try {
                 inviteeClient.writeEvent("INVITE_ACCEPT|ERROR|" + e.getMessage());
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
             return "INVITE_ACCEPT|ERROR";
         }
     }
@@ -521,183 +522,195 @@ public class HomeHandler {
 
     /**
      * Xử lý khi trận đấu kết thúc
-     * Format: MATCH_END|matchId|username|score
+     * Format mới: MATCH_END|matchId|username|myScore|opponentScore
      */
     public String handleMatchEnd(ClientHandler client, String[] parts) {
         try {
+            if (parts.length < 5) {
+                try {
+                    client.writeEvent("MATCH_END|ERROR|Invalid payload");
+                } catch (IOException ignored) {
+                }
+                return null;
+            }
+
             int matchId = Integer.parseInt(parts[1]);
             String username = parts[2];
             int myScore = Integer.parseInt(parts[3]);
+            int opponentScoreFromClient = Integer.parseInt(parts[4]);
 
-            // Kiểm tra username có hợp lệ không
             String loggedUser = SocketController.getUserByClient(client);
             Logger.info("MATCH_END: username from client=" + username + ", loggedUser=" + loggedUser);
 
             if (loggedUser == null) {
                 Logger.error("User not logged in! Username: " + username);
-                return "MATCH_END|ERROR|User not logged in";
+                try {
+                    client.writeEvent("MATCH_END|ERROR|User not logged in");
+                } catch (IOException ignored) {
+                }
+                return null;
             }
 
             if (!username.equals(loggedUser)) {
                 Logger.error("Username mismatch! Client sent: " + username + ", Expected: " + loggedUser);
-                return "MATCH_END|ERROR|Invalid user";
+                try {
+                    client.writeEvent("MATCH_END|ERROR|Invalid user");
+                } catch (IOException ignored) {
+                }
+                return null;
             }
 
-            // Lấy thông tin trận đấu
             Map<String, Integer> scores = activeMatches.get(matchId);
             if (scores == null) {
-                return "MATCH_END|ERROR|Match not found";
+                Logger.warn("Match " + matchId + " not found in activeMatches - creating temporary score map");
+                scores = new HashMap<>();
+            } else {
+                scores = new HashMap<>(scores);
             }
 
-            // Cập nhật điểm của người chơi hiện tại
             scores.put(username, myScore);
 
-            // Tính thời gian đã chơi (giây)
+            String opponentUsername = SocketController.getOpponentUsername(username);
+            if (opponentUsername != null) {
+                scores.put(opponentUsername, opponentScoreFromClient);
+            }
+
             Long startTime = matchStartTimes.get(matchId);
-            int timeTaken = 180; // Mặc định 3 phút
+            int timeTaken = 180;
             if (startTime != null) {
                 timeTaken = (int) ((System.currentTimeMillis() - startTime) / 1000);
             }
 
-            // Lấy user ID
             Integer userId = userDao.findUserIdByUsername(username);
             if (userId == null) {
-                return "MATCH_END|ERROR|User not found";
+                try {
+                    client.writeEvent("MATCH_END|ERROR|User not found");
+                } catch (IOException ignored) {
+                }
+                return null;
             }
 
-            // Xác định người thắng và tính ELO
+            Integer opponentId = null;
+            if (opponentUsername != null) {
+                opponentId = userDao.findUserIdByUsername(opponentUsername);
+            }
+
+            int opponentScore = opponentUsername != null
+                    ? scores.getOrDefault(opponentUsername, opponentScoreFromClient)
+                    : opponentScoreFromClient;
+
             String winner = null;
             String loser = null;
             int winnerScore = myScore;
-            int loserScore = 0;
+            int loserScore = opponentScore;
+            boolean isDraw = false;
 
-            // TODO: Mock data đối thủ (sẽ thay bằng logic thật sau)
-            String opponentUsername = null;
-            int opponentScore = 0;
-
-            // Tìm đối thủ trong activeMatches
-            boolean foundOpponent = false;
-            for (Map.Entry<String, Integer> entry : scores.entrySet()) {
-                if (!entry.getKey().equals(username)) {
-                    opponentUsername = entry.getKey();
-                    opponentScore = entry.getValue();
-                    foundOpponent = true;
-                    Logger.info("Found opponent in activeMatches: " + opponentUsername + ", score=" + opponentScore);
-                    break;
-                }
-            }
-
-            // Nếu không tìm thấy đối thủ thật, dùng mock data để test
-            if (!foundOpponent) {
-                Logger.info("No opponent found in activeMatches, using mock data");
-                // Mock: Lấy username của user_id = 2 từ database
-                try {
-                    opponentUsername = getUsernameById(2); // Mock user_id = 2
-                    if (opponentUsername == null) {
-                        opponentUsername = "nguyenth"; // Fallback nếu không tìm thấy
-                    }
-                    opponentScore = 1; // Mock điểm đối thủ = 1
-                    foundOpponent = true;
-                    Logger.info("Mock opponent: " + opponentUsername + " (user_id=2), score=" + opponentScore);
-                } catch (Exception e) {
-                    Logger.error("Error getting mock opponent", e);
-                }
-            }
-
-            // So sánh điểm
-            if (foundOpponent && opponentUsername != null) {
-                if (myScore > opponentScore) {
-                    winner = username;
-                    loser = opponentUsername;
-                    loserScore = opponentScore;
-                    winnerScore = myScore;
-                } else if (myScore < opponentScore) {
-                    winner = opponentUsername;
-                    loser = username;
-                    loserScore = myScore;
-                    winnerScore = opponentScore;
-                } else {
-                    // Hòa
-                    winner = null;
-                    loser = null;
-                }
-                Logger.info("Match result: winner=" + winner + ", winnerScore=" + winnerScore +
-                        ", loser=" + loser + ", loserScore=" + loserScore);
-            } else {
-                // Không có đối thủ, người chơi hiện tại tự động thắng
+            if (opponentUsername == null) {
                 winner = username;
                 winnerScore = myScore;
-                loser = null;
                 loserScore = 0;
-                Logger.info("No opponent, player wins by default");
+            } else if (myScore > opponentScore) {
+                winner = username;
+                loser = opponentUsername;
+                winnerScore = myScore;
+                loserScore = opponentScore;
+            } else if (myScore < opponentScore) {
+                winner = opponentUsername;
+                loser = username;
+                winnerScore = opponentScore;
+                loserScore = myScore;
+            } else {
+                isDraw = true;
             }
 
-            // Tính ELO change (đơn giản: thắng +20, thua -10, hòa 0)
             int eloChange = 0;
+            int opponentEloChange = 0;
             boolean isWinner = false;
-            if (winner != null && winner.equals(username)) {
+            boolean opponentIsWinner = false;
+
+            if (isDraw) {
+                eloChange = 0;
+                opponentEloChange = 0;
+            } else if (winner != null && winner.equals(username)) {
                 eloChange = 20;
                 isWinner = true;
-            } else if (loser != null && loser.equals(username)) {
+                if (opponentUsername != null) {
+                    opponentEloChange = -10;
+                }
+            } else if (winner != null && opponentUsername != null && winner.equals(opponentUsername)) {
                 eloChange = -10;
-                isWinner = false;
+                opponentEloChange = 20;
+                opponentIsWinner = true;
+            } else {
+                // Không có đối thủ, người chơi thắng mặc định
+                eloChange = 20;
+                isWinner = true;
+                opponentEloChange = 0;
             }
 
-            // Lưu kết quả của người chơi hiện tại vào database
             matchHistoryDao.saveMatchResult(matchId, userId, myScore, eloChange, timeTaken, isWinner);
             matchHistoryDao.updateUserStats(userId, eloChange, myScore);
 
-            // Lưu kết quả của đối thủ (nếu có)
-            if (opponentUsername != null) {
-                Integer opponentId = userDao.findUserIdByUsername(opponentUsername);
-                if (opponentId != null) {
-                    int opponentEloChange = 0;
-                    boolean opponentIsWinner = false;
-
-                    if (winner != null && winner.equals(opponentUsername)) {
-                        opponentEloChange = 20;
-                        opponentIsWinner = true;
-                    } else if (loser != null && loser.equals(opponentUsername)) {
-                        opponentEloChange = -10;
-                        opponentIsWinner = false;
-                    }
-
-                    matchHistoryDao.saveMatchResult(matchId, opponentId, opponentScore,
-                            opponentEloChange, timeTaken, opponentIsWinner);
-                    matchHistoryDao.updateUserStats(opponentId, opponentEloChange, opponentScore);
-                    Logger.info("Saved opponent match result: " + opponentUsername +
-                            ", score=" + opponentScore + ", eloChange=" + opponentEloChange);
-                }
+            if (opponentUsername != null && opponentId != null) {
+                matchHistoryDao.saveMatchResult(matchId, opponentId, opponentScore, opponentEloChange,
+                        timeTaken, opponentIsWinner);
+                matchHistoryDao.updateUserStats(opponentId, opponentEloChange, opponentScore);
+                Logger.info("Saved opponent match result: " + opponentUsername +
+                        ", score=" + opponentScore + ", eloChange=" + opponentEloChange);
             }
 
-            // Đánh dấu trận đấu là finished
             Integer winnerId = null;
-            if (winner != null) {
+            if (!isDraw && winner != null) {
                 winnerId = userDao.findUserIdByUsername(winner);
             }
             matchHistoryDao.finishMatch(matchId, winnerId);
 
-            // Xóa tracking
             activeMatches.remove(matchId);
             matchStartTimes.remove(matchId);
+            SocketController.removeMatch(matchId);
 
-            // Gửi kết quả về client
+            broadcastUserStatus(username, "ONLINE");
+            if (opponentUsername != null) {
+                broadcastUserStatus(opponentUsername, "ONLINE");
+            }
+
+            String loserDisplay = (loser != null) ? loser : "N/A";
+
             String result;
-            if (winner != null) {
-                result = String.format("MATCH_END|winner=%s|winnerScore=%d|loser=%s|loserScore=%d|eloChange=%d",
-                        winner, winnerScore, loser, loserScore, eloChange);
-            } else {
+            if (isDraw) {
                 result = String.format("MATCH_END|draw=true|score=%d|eloChange=%d", myScore, eloChange);
+            } else {
+                result = String.format("MATCH_END|winner=%s|winnerScore=%d|loser=%s|loserScore=%d|eloChange=%d",
+                        winner, winnerScore, loserDisplay, loserScore, eloChange);
             }
 
             try {
                 client.writeEvent(result);
             } catch (IOException e) {
-                Logger.error("Error sending match result", e);
+                Logger.error("Error sending match result to " + username, e);
+            }
+
+            if (opponentUsername != null) {
+                ClientHandler opponentClient = SocketController.getClientByUser(opponentUsername);
+                if (opponentClient != null && opponentClient != client) {
+                    String opponentResult;
+                    if (isDraw) {
+                        opponentResult = String.format("MATCH_END|draw=true|score=%d|eloChange=%d",
+                                opponentScore, opponentEloChange);
+                    } else {
+                        opponentResult = String.format(
+                                "MATCH_END|winner=%s|winnerScore=%d|loser=%s|loserScore=%d|eloChange=%d",
+                                winner, winnerScore, loserDisplay, loserScore, opponentEloChange);
+                    }
+                    try {
+                        opponentClient.writeEvent(opponentResult);
+                    } catch (IOException e) {
+                        Logger.error("Error sending match result to opponent " + opponentUsername, e);
+                    }
+                }
             }
 
             return null;
-
         } catch (Exception e) {
             Logger.error("Error handling match end", e);
             try {

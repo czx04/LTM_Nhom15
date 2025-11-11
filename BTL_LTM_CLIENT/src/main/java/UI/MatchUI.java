@@ -86,6 +86,7 @@ public class MatchUI extends BaseUI {
         JPanel topPanel = new JPanel(new GridLayout(3, 2));
         timeLabel = new JLabel("⏱ Thời gian: " + time);
         opponentNameLabel = new JLabel("👤 Đối thủ: " + scoreOpponent); // scoreOpponent là tên đối thủ
+        opponentScore = 0;
         opponentScoreLabel = new JLabel("🎯 Điểm đối thủ: 0");
         myScoreLabel = new JLabel("⭐ Điểm của bạn: 0");
 
@@ -332,7 +333,7 @@ public class MatchUI extends BaseUI {
 
         // Gửi kết quả về server
         if (matchController != null) {
-            matchController.endMatch(myScore);
+            matchController.endMatch(myScore, opponentScore);
         } else {
             JOptionPane.showMessageDialog(null, "Lỗi: Không thể gửi kết quả trận đấu!");
         }
