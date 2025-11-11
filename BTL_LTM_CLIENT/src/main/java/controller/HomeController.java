@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
 import UI.UsersListPanel;
+import model.UserOnlineInfo;
 
 public class HomeController {
     private UsersListPanel usersPanel;
@@ -30,15 +32,40 @@ public class HomeController {
         }
     }
 
+    // Method cũ - deprecated nhưng giữ lại để tương thích
+    @Deprecated
     public void onUsersOnlineReceived(List<String> users, List<String> allUsers) {
-        System.out.println("HomeController.onUsersOnlineReceived called with users: " + users);
-        System.out.println("usersPanel is null: " + (usersPanel == null));
+        System.out.println("HomeController.onUsersOnlineReceived (old format) called with users: " + users);
 
         if (usersPanel != null) {
             System.out.println("Calling usersPanel.setUsers()");
             usersPanel.setUsers(users, allUsers);
         } else {
             System.out.println("usersPanel is null - cannot update UI");
+        }
+    }
+
+    // Method mới để nhận danh sách với status
+    public void onUsersOnlineReceivedWithStatus(List<UserOnlineInfo> users) {
+        System.out.println("HomeController.onUsersOnlineReceivedWithStatus called with " + users.size() + " users");
+        System.out.println("usersPanel is null: " + (usersPanel == null));
+
+        if (usersPanel != null) {
+            System.out.println("Calling usersPanel.setUsersWithStatus()");
+            usersPanel.setUsersWithStatus(users);
+        } else {
+            System.out.println("usersPanel is null - cannot update UI");
+        }
+    }
+
+    // Cập nhật trạng thái của một user
+    public void updateUserStatus(String username, String status) {
+        System.out.println("HomeController.updateUserStatus: " + username + " -> " + status);
+
+        if (usersPanel != null) {
+            usersPanel.updateUserStatus(username, status);
+        } else {
+            System.out.println("usersPanel is null - cannot update status");
         }
     }
 

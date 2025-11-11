@@ -131,43 +131,41 @@ public class EventHandler {
 
     public java.util.List<String> parseUsersOnline(Client client, String[] response) {
         java.util.List<String> users = new ArrayList<>();
-        java.util.List<String> allUser = new ArrayList<>();
+        java.util.List<model.UserOnlineInfo> userInfoList = new ArrayList<>();
 
         System.out.println("Parsing users online: " + java.util.Arrays.toString(response));
 
-        if (response[1] != null && !response[1].trim().isEmpty()) {
+        if (response.length > 1 && response[1] != null && !response[1].trim().isEmpty()) {
             String body = response[1];
             String[] userArray = body.split(",");
-            for (String user : userArray) {
-                if (!user.trim().isEmpty()) {
-                    users.add(user.trim());
+
+            for (String userEntry : userArray) {
+                if (!userEntry.trim().isEmpty()) {
+                    // Parse format: username:status
+                    String[] parts = userEntry.split(":");
+                    if (parts.length == 2) {
+                        String username = parts[0].trim();
+                        String status = parts[1].trim();
+                        userInfoList.add(new model.UserOnlineInfo(username, status));
+                        users.add(username); // Để tương thích với code cũ
+                    } else {
+                        // Format cũ - không có status
+                        userInfoList.add(new model.UserOnlineInfo(userEntry.trim(), "AVAILABLE"));
+                        users.add(userEntry.trim());
+                    }
                 }
             }
         } else {
-            System.out.println("No users onl data in response or response too short");
+            System.out.println("No users online data in response");
         }
 
-        if (response[2] != null && !response[2].trim().isEmpty()) {
-            String body = response[2];
-            String[] userArray = body.split(",");
-            for (String user : userArray) {
-                if (!user.trim().isEmpty()) {
-                    allUser.add(user.trim());
-                }
-            }
-
-        } else {
-            System.out.println("No users onl data in response or response too short");
-        }
-
-        System.out.println("Parsed users: " + users);
-        System.out.println("Parsed all users: " + allUser);
+        System.out.println("Parsed " + userInfoList.size() + " users with status");
 
         SwingUtilities.invokeLater(() -> {
             try {
                 if (client.homeController != null) {
-                    System.out.println("Calling homeController.onUsersOnlineReceived with " + users.size() + " users");
-                    client.homeController.onUsersOnlineReceived(users, allUser);
+                    System.out.println("Calling homeController.onUsersOnlineReceivedWithStatus");
+                    client.homeController.onUsersOnlineReceivedWithStatus(userInfoList);
                 } else {
                     System.out.println("homeController is null!");
                 }
@@ -180,13 +178,21 @@ public class EventHandler {
     }
 
     public void handleUserStatus(Client client, String[] parts) {
-        // format: USER_STATUS|<username>|ONLINE|OFFLINE
+        // format: USER_STATUS|username|status
+        // status có thể là: ONLINE, OFFLINE, AVAILABLE, IN_MATCH
         if (parts.length >= 3) {
+            String username = parts[1];
+            String status = parts[2];
+
+            System.out.println("Received USER_STATUS: " + username + " -> " + status);
+
             SwingUtilities.invokeLater(() -> {
-                if (client != null && client.homeController != null && client.out != null) {
+                if (client != null && client.homeController != null) {
                     try {
-                        client.homeController.getUsersOnline(client.in, client.out);
+                        // Cập nhật trạng thái của user trong UI
+                        client.homeController.updateUserStatus(username, status);
                     } catch (Exception e) {
+                        System.err.println("Error updating user status: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }

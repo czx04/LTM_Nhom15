@@ -29,17 +29,25 @@ public class HomeHandler {
     }
 
     public String getUserOnl(ClientHandler client) throws SQLException {
-        Set<String> names = new HashSet<>(SocketController.getLoggedInUsers().values());
+        Set<String> onlineUsers = new HashSet<>(SocketController.getLoggedInUsers().values());
         String currentUser = SocketController.getUserByClient(client);
-        System.out.println(names);
-        names.remove(currentUser);
-        List<String> allUsers = userDao.getAllUsers();
-        allUsers.remove(currentUser);
-        allUsers.removeAll(names);
-        System.out.println(names);
-        System.out.println(allUsers);
 
-        return "USER_ONLINE|" + String.join(",", names) + "|" + String.join(",", allUsers);
+        // Loại bỏ user hiện tại
+        onlineUsers.remove(currentUser);
+
+        // Tạo danh sách với thông tin trạng thái
+        List<String> usersWithStatus = new ArrayList<>();
+
+        for (String username : onlineUsers) {
+            boolean inMatch = SocketController.isPlayerInMatch(username);
+            String status = inMatch ? "IN_MATCH" : "AVAILABLE";
+            // Format: username:status
+            usersWithStatus.add(username + ":" + status);
+        }
+
+        Logger.info("Sending online users list to " + currentUser + ": " + usersWithStatus);
+
+        return "USER_ONLINE|" + String.join(",", usersWithStatus);
     }
 
     public String sendInvite(ClientHandler invitorClient, String[] receiver) {
@@ -110,6 +118,10 @@ public class HomeHandler {
             // Thêm vào quản lý trạng thái in-memory
             SocketController.addPlayerToMatch(invitor, matchId);
             SocketController.addPlayerToMatch(invitee, matchId);
+
+            // Broadcast trạng thái IN_MATCH cho tất cả người chơi online
+            broadcastUserStatus(invitor, "IN_MATCH");
+            broadcastUserStatus(invitee, "IN_MATCH");
 
             // Tạo câu hỏi cho match (5 câu hỏi)
             matchDao.generateQuestionsForMatch(matchId, 5);
@@ -342,9 +354,9 @@ public class HomeHandler {
                 return "LEAVE_MATCH|ERROR|Bạn không trong trận nào";
             }
 
-            // Thông báo cho đối thủ
-            ClientHandler opponent = SocketController.getOpponentInMatch(username);
+            // Lấy thông tin đối thủ
             String opponentName = SocketController.getOpponentUsername(username);
+            ClientHandler opponent = SocketController.getOpponentInMatch(username);
 
             if (opponent != null) {
                 opponent.writeEvent("OPPONENT_LEFT|" + username + " đã rời khỏi trận");
@@ -354,6 +366,12 @@ public class HomeHandler {
             SocketController.removePlayerFromMatch(username);
             if (opponentName != null) {
                 SocketController.removePlayerFromMatch(opponentName);
+            }
+
+            // Broadcast trạng thái AVAILABLE cho tất cả người chơi online
+            broadcastUserStatus(username, "AVAILABLE");
+            if (opponentName != null) {
+                broadcastUserStatus(opponentName, "AVAILABLE");
             }
 
             Logger.info("Player " + username + " left match " + matchId);
@@ -399,6 +417,12 @@ public class HomeHandler {
             SocketController.removePlayerFromMatch(username);
             if (opponentName != null) {
                 SocketController.removePlayerFromMatch(opponentName);
+            }
+
+            // Broadcast trạng thái AVAILABLE cho tất cả người chơi online
+            broadcastUserStatus(username, "AVAILABLE");
+            if (opponentName != null) {
+                broadcastUserStatus(opponentName, "AVAILABLE");
             }
 
             Logger.info("Match " + matchId + " finished for " + username);
