@@ -22,6 +22,8 @@ public class HomeHandler {
     private final Map<Integer, Map<String, Integer>> activeMatches = new HashMap<>();
     // Track thời gian bắt đầu trận: matchId -> startTime
     private final Map<Integer, Long> matchStartTimes = new HashMap<>();
+    // Track những người chơi đã confirm kết quả: matchId -> Set<username>
+    private final Map<Integer, Set<String>> matchEndConfirmations = new HashMap<>();
 
     public HomeHandler(UserDao userDao) {
         this.userDao = userDao;
@@ -560,6 +562,17 @@ public class HomeHandler {
                 return null;
             }
 
+            // Kiểm tra xem người chơi này đã confirm chưa
+            Set<String> confirmations = matchEndConfirmations.computeIfAbsent(matchId, k -> new HashSet<>());
+            if (confirmations.contains(username)) {
+                Logger.info("Player " + username + " already confirmed match end, ignoring duplicate");
+                return null;
+            }
+
+            // Đánh dấu người chơi đã confirm
+            confirmations.add(username);
+            Logger.info("Player " + username + " confirmed match end. Total confirmations: " + confirmations.size());
+
             Map<String, Integer> scores = activeMatches.get(matchId);
             if (scores == null) {
                 Logger.warn("Match " + matchId + " not found in activeMatches - creating temporary score map");
@@ -659,21 +672,6 @@ public class HomeHandler {
                         ", score=" + opponentScore + ", eloChange=" + opponentEloChange);
             }
 
-            Integer winnerId = null;
-            if (!isDraw && winner != null) {
-                winnerId = userDao.findUserIdByUsername(winner);
-            }
-            matchHistoryDao.finishMatch(matchId, winnerId);
-
-            activeMatches.remove(matchId);
-            matchStartTimes.remove(matchId);
-            SocketController.removeMatch(matchId);
-
-            broadcastUserStatus(username, "ONLINE");
-            if (opponentUsername != null) {
-                broadcastUserStatus(opponentUsername, "ONLINE");
-            }
-
             String loserDisplay = (loser != null) ? loser : "N/A";
 
             String result;
@@ -690,24 +688,32 @@ public class HomeHandler {
                 Logger.error("Error sending match result to " + username, e);
             }
 
-            if (opponentUsername != null) {
-                ClientHandler opponentClient = SocketController.getClientByUser(opponentUsername);
-                if (opponentClient != null && opponentClient != client) {
-                    String opponentResult;
-                    if (isDraw) {
-                        opponentResult = String.format("MATCH_END|draw=true|score=%d|eloChange=%d",
-                                opponentScore, opponentEloChange);
-                    } else {
-                        opponentResult = String.format(
-                                "MATCH_END|winner=%s|winnerScore=%d|loser=%s|loserScore=%d|eloChange=%d",
-                                winner, winnerScore, loserDisplay, loserScore, opponentEloChange);
-                    }
-                    try {
-                        opponentClient.writeEvent(opponentResult);
-                    } catch (IOException e) {
-                        Logger.error("Error sending match result to opponent " + opponentUsername, e);
-                    }
+            // Chỉ cleanup và broadcast ONLINE khi CẢ 2 người chơi đã confirm
+            boolean bothPlayersConfirmed = opponentUsername != null && confirmations.contains(opponentUsername);
+
+            if (bothPlayersConfirmed || opponentUsername == null) {
+                Logger.info("Both players confirmed or no opponent, cleaning up match " + matchId);
+
+                // Lưu match hoàn thành vào database
+                Integer winnerId = null;
+                if (!isDraw && winner != null) {
+                    winnerId = userDao.findUserIdByUsername(winner);
                 }
+                matchHistoryDao.finishMatch(matchId, winnerId);
+
+                // Cleanup
+                activeMatches.remove(matchId);
+                matchStartTimes.remove(matchId);
+                matchEndConfirmations.remove(matchId);
+                SocketController.removeMatch(matchId);
+
+                // Broadcast ONLINE cho cả 2 người chơi
+                broadcastUserStatus(username, "ONLINE");
+                if (opponentUsername != null) {
+                    broadcastUserStatus(opponentUsername, "ONLINE");
+                }
+            } else {
+                Logger.info("Waiting for opponent " + opponentUsername + " to confirm match end");
             }
 
             return null;

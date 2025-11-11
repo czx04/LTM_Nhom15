@@ -392,9 +392,11 @@ public class EventHandler {
             JOptionPane.showMessageDialog(null, "Lỗi khi hiển thị kết quả: " + e.getMessage());
         }
     }
+
     public void handleOpponentScored(Client client, String[] parts) {
         // format: OPPONENT_SCORED|username
-        if (parts.length < 2) return;
+        if (parts.length < 2)
+            return;
 
         String opponentName = parts[1];
 
@@ -408,7 +410,8 @@ public class EventHandler {
 
     public void handleOpponentLeft(Client client, String[] parts) {
         // format: OPPONENT_LEFT|message
-        if (parts.length < 2) return;
+        if (parts.length < 2)
+            return;
 
         String message = parts[1];
 
@@ -426,6 +429,5 @@ public class EventHandler {
             }
         });
     }
-
 
 }

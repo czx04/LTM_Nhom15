@@ -133,8 +133,7 @@ public class UsersListPanel extends JPanel {
                 // Gradient circle
                 GradientPaint gradient = new GradientPaint(
                         0, 0, new Color(99, 110, 250),
-                        getWidth(), getHeight(), new Color(139, 92, 246)
-                );
+                        getWidth(), getHeight(), new Color(139, 92, 246));
                 g2d.setPaint(gradient);
                 g2d.fillOval(2, 2, 44, 44);
             }
@@ -236,15 +235,18 @@ public class UsersListPanel extends JPanel {
                         field.setAccessible(true);
                         field.set(button, true);
                         button.repaint();
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
+
                 public void mouseExited(java.awt.event.MouseEvent evt) {
                     try {
                         java.lang.reflect.Field field = button.getClass().getDeclaredField("isHovered");
                         field.setAccessible(true);
                         field.set(button, false);
                         button.repaint();
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             });
         } else {
