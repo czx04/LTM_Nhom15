@@ -12,13 +12,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MatchUI extends BaseUI {
-    private JLabel timeLabel, opponentScoreLabel, myScoreLabel, questionLabel;
+    private JLabel timeLabel, opponentNameLabel, opponentScoreLabel, myScoreLabel, questionLabel;
     private JPanel numberPanel, operatorPanel;
     private JComboBox<String> questionCombo;
     private JTextField expressionField;
     private JButton submitBtn, clearBtn, backspaceBtn;
     private JSONArray questions;
     private int myScore = 0;
+    private int opponentScore = 0; // Track điểm đối thủ
     private MatchController matchController;
     private Set<Integer> answeredQuestions = new HashSet<>();
     private Timer countdownTimer;
@@ -82,13 +83,17 @@ public class MatchUI extends BaseUI {
         container.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // ====== HEADER ======
-        JPanel topPanel = new JPanel(new GridLayout(2, 2));
+        JPanel topPanel = new JPanel(new GridLayout(3, 2));
         timeLabel = new JLabel("⏱ Thời gian: " + time);
-        opponentScoreLabel = new JLabel("👤 Điểm đối thủ: " + scoreOpponent);
+        opponentNameLabel = new JLabel("👤 Đối thủ: " + scoreOpponent); // scoreOpponent là tên đối thủ
+        opponentScoreLabel = new JLabel("🎯 Điểm đối thủ: 0");
         myScoreLabel = new JLabel("⭐ Điểm của bạn: 0");
+
         topPanel.add(timeLabel);
-        topPanel.add(opponentScoreLabel);
+        topPanel.add(opponentNameLabel);
         topPanel.add(myScoreLabel);
+        topPanel.add(opponentScoreLabel);
+
         container.add(topPanel, BorderLayout.NORTH);
 
         // ====== CENTER (Câu hỏi + chọn câu) ======
@@ -209,11 +214,11 @@ public class MatchUI extends BaseUI {
     }
 
     /**
-     * Server gửi MATCH_UPDATE (thời gian và điểm đối thủ)
+     * Server gửi MATCH_UPDATE (thời gian)
      */
     public void updateTimeAndScore(String time, String oppScore) {
         timeLabel.setText("⏱ Thời gian: " + time);
-        opponentScoreLabel.setText("👤 Điểm đối thủ: " + oppScore);
+        // Không cập nhật điểm đối thủ ở đây nữa, dùng increaseOpponentScore() riêng
     }
 
     /**
@@ -239,17 +244,9 @@ public class MatchUI extends BaseUI {
         if (opponentScoreLabel == null)
             return;
 
-        // Lấy điểm hiện tại từ label và tăng lên 1
-        String currentText = opponentScoreLabel.getText();
-        try {
-            // Extract số từ text "👤 Điểm đối thủ: X"
-            String[] parts = currentText.split(": ");
-            int currentScore = Integer.parseInt(parts[1]);
-            currentScore++;
-            opponentScoreLabel.setText("👤 Điểm đối thủ: " + currentScore);
-        } catch (Exception e) {
-            System.err.println("Lỗi khi cập nhật điểm đối thủ: " + e.getMessage());
-        }
+        // Tăng điểm đối thủ
+        opponentScore++;
+        opponentScoreLabel.setText("🎯 Điểm đối thủ: " + opponentScore);
     }
 
     /**
@@ -346,5 +343,12 @@ public class MatchUI extends BaseUI {
      */
     public int getMyScore() {
         return myScore;
+    }
+
+    /**
+     * Lấy điểm hiện tại của đối thủ
+     */
+    public int getOpponentScore() {
+        return opponentScore;
     }
 }
