@@ -147,9 +147,8 @@ public class EventHandler {
                         String username = parts[0].trim();
                         String status = parts[1].trim();
                         userInfoList.add(new model.UserOnlineInfo(username, status));
-                        users.add(username); // Để tương thích với code cũ
+                        users.add(username);
                     } else {
-                        // Format cũ - không có status
                         userInfoList.add(new model.UserOnlineInfo(userEntry.trim(), "AVAILABLE"));
                         users.add(userEntry.trim());
                     }
