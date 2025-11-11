@@ -61,8 +61,12 @@ public class Home extends BaseUI {
         JPanel rightPanel = new JPanel(new BorderLayout());
         JButton logoutBtn = new JButton("Đăng xuất");
         JButton rankBtn = new JButton("Xem BXH");
+        JButton historyBtn = new JButton("Lịch sử");
         JPanel rightHeader = createHeaderPanel("Người chơi", logoutBtn);
-        rightHeader.add(rankBtn, BorderLayout.WEST);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.add(rankBtn);
+        buttonPanel.add(historyBtn);
+        rightHeader.add(buttonPanel, BorderLayout.WEST);
         rightPanel.add(rightHeader, BorderLayout.NORTH);
 
         HomeController controllerToUse = externalHomeController != null ? externalHomeController : homeController;
@@ -87,8 +91,9 @@ public class Home extends BaseUI {
 
         logoutBtn.addActionListener(e -> authController.handleLogout(in, out));
         rankBtn.addActionListener(e -> controllerToUse.getRank(in, out, ""));
+        historyBtn.addActionListener(e -> controllerToUse.getMatchHistory(in, out));
 
-        // Khi bấm “Vào trận”
+        // Khi bấm "Vào trận"
         joinMatchBtn.addActionListener(e -> controllerToUse.joinMatch(in, out));
 
         refreshFrame(container);

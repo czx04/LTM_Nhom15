@@ -112,6 +112,7 @@ public class ClientHandler extends Thread {
             case "INVITE_ACCEPT" -> homeHandler.handleInviteAccept(this, parts);
             case "INVITE_REJECT" -> homeHandler.handleInviteReject(this, parts);
             case "GET_RANK" -> homeHandler.getLeaderboard(parts);
+            case "GET_MATCH_HISTORY" -> homeHandler.getMatchHistory(this);
             case "JOIN_MATCH" -> homeHandler.getMatchDisplay(this, parts);
             case "SUBMIT_ANSWER" -> homeHandler.checkAnswer(this, parts);
             case "LEAVE_MATCH" -> homeHandler.handleLeaveMatch(this);

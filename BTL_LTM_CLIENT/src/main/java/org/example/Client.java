@@ -105,6 +105,7 @@ public class Client {
                 case "INVITE_REJECTED" -> eventHandler.handleInviteRejected(this, parts);
                 case "USER_STATUS" -> eventHandler.handleUserStatus(this, parts);
                 case "RANK" -> eventHandler.handleRank(this, parts);
+                case "MATCH_HISTORY" -> eventHandler.handleMatchHistory(this, parts);
                 case "JOIN_MATCH" -> eventHandler.handleJoinMatch(this, parts);
                 case "MATCH_START" -> eventHandler.handleMatchStart(this, parts);
                 case "ANSWER_RESULT" -> eventHandler.handleAnswerResult(this, parts);

@@ -233,6 +233,25 @@ public class HomeHandler {
         }
     }
 
+    public String getMatchHistory(ClientHandler client) {
+        try {
+            String username = SocketController.getUserByClient(client);
+            if (username == null) {
+                return "MATCH_HISTORY|ERROR";
+            }
+
+            java.util.List<String[]> rows = matchHistoryDao.getMatchHistoryByUsername(username);
+            java.util.List<String> mapped = new java.util.ArrayList<>();
+            for (String[] r : rows) {
+                mapped.add(String.join("~", r[0], r[1], r[2], r[3], r[4], r[5]));
+            }
+            return "MATCH_HISTORY|" + String.join(",", mapped);
+        } catch (Exception e) {
+            Logger.error("getMatchHistory error", e);
+            return "MATCH_HISTORY|ERROR";
+        }
+    }
+
     public String getMatchDisplay(ClientHandler client, String[] parts) {
         try {
             int matchId = 1; // có thể truyền từ client sau
