@@ -79,4 +79,51 @@ public class MatchHistoryDao {
             }
         }
     }
+
+    public java.util.List<String[]> getMatchHistoryByUsername(String username) throws SQLException {
+        String sql = "SELECT mh.match_id, " +
+                     "       (SELECT u2.username FROM users u2 JOIN match_history mh2 ON u2.user_id = mh2.user_id " +
+                     "        WHERE mh2.match_id = mh.match_id AND u2.username != ? LIMIT 1) AS opponent, " +
+                     "       mh.score, mh.elo_change, mh.is_winner, mh.finished_at " +
+                     "FROM match_history mh " +
+                     "JOIN users u ON mh.user_id = u.user_id " +
+                     "WHERE u.username = ? " +
+                     "ORDER BY mh.finished_at DESC " +
+                     "LIMIT 50";
+
+        java.util.List<String[]> results = new java.util.ArrayList<>();
+
+        try (Connection conn = Connector.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, username);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                while (rs.next()) {
+                    String[] row = new String[6];
+                    row[0] = String.valueOf(rs.getInt("match_id"));
+                    row[1] = rs.getString("opponent");
+                    row[2] = String.valueOf(rs.getInt("score"));
+                    int eloChange = rs.getInt("elo_change");
+                    boolean isWinner = rs.getBoolean("is_winner");
+                    row[3] = String.valueOf(eloChange);
+                    
+                    if (isWinner) {
+                        row[4] = "Thắng";
+                    } else if (eloChange == 0) {
+                        row[4] = "Hòa";
+                    } else {
+                        row[4] = "Thua";
+                    }
+                    
+                    Timestamp timestamp = rs.getTimestamp("finished_at");
+                    row[5] = timestamp != null ? sdf.format(timestamp) : "";
+                    results.add(row);
+                }
+            }
+        }
+
+        return results;
+    }
 }

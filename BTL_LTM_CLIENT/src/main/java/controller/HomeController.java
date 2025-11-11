@@ -85,6 +85,14 @@ public class HomeController {
         }
     }
 
+    public void getMatchHistory(BufferedReader in, BufferedWriter out) {
+        try {
+            sendLine("GET_MATCH_HISTORY", out);
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+    }
+
     public void joinMatch(BufferedReader in, BufferedWriter out) {
         try {
             sendLine("JOIN_MATCH", out);

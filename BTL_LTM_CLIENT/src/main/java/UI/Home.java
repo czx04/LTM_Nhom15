@@ -1,7 +1,6 @@
 package UI;
 
 import controller.HomeController;
-import util.Constants;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -132,9 +131,11 @@ public class Home extends BaseUI {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttonPanel.setOpaque(false);
 
+        JButton historyBtn = createSmallModernButton("📜 Lịch sử", new Color(139, 92, 246));
         JButton rankBtn = createSmallModernButton("🏆 BXH", new Color(59, 130, 246));
         JButton logoutBtn = createSmallModernButton("🚪 Thoát", new Color(239, 68, 68));
 
+        buttonPanel.add(historyBtn);
         buttonPanel.add(rankBtn);
         buttonPanel.add(logoutBtn);
 
@@ -207,6 +208,7 @@ public class Home extends BaseUI {
 
         logoutBtn.addActionListener(e -> authController.handleLogout(in, out));
         rankBtn.addActionListener(e -> controllerToUse.getRank(in, out, ""));
+        historyBtn.addActionListener(e -> controllerToUse.getMatchHistory(in, out));
         joinMatchBtn.addActionListener(e -> controllerToUse.joinMatch(in, out));
 
         refreshFrame(container);

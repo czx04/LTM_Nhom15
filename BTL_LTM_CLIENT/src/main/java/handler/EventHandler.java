@@ -240,8 +240,41 @@ public class EventHandler {
                 rankClass.getMethod("showRank", javax.swing.JFrame.class,
                         java.io.BufferedReader.class,
                         java.io.BufferedWriter.class,
-                        java.util.List.class)
-                        .invoke(rank, client.frame, client.in, client.out, rows);
+                        java.util.List.class,
+                        String.class,
+                        controller.HomeController.class)
+                        .invoke(rank, client.frame, client.in, client.out, rows, client.currentUsername, client.homeController);
+            } catch (Exception e) {
+                e.printStackTrace();
+                handleConnectionError();
+            }
+        });
+    }
+
+    public void handleMatchHistory(Client client, String[] parts) {
+        java.util.List<String[]> rows = new java.util.ArrayList<>();
+        if (parts.length >= 2 && parts[1] != null && !"ERROR".equals(parts[1])) {
+            String[] entries = parts[1].split(",");
+            for (String entry : entries) {
+                if (entry == null || entry.isEmpty())
+                    continue;
+                String[] cols = entry.split("~");
+                if (cols.length >= 6) {
+                    rows.add(new String[] { cols[0], cols[1], cols[2], cols[3], cols[4], cols[5] });
+                }
+            }
+        }
+        SwingUtilities.invokeLater(() -> {
+            try {
+                Class<?> historyClass = Class.forName("UI.MatchHistory");
+                Object history = historyClass.getDeclaredConstructor().newInstance();
+                historyClass.getMethod("showMatchHistory", javax.swing.JFrame.class,
+                        java.io.BufferedReader.class,
+                        java.io.BufferedWriter.class,
+                        java.util.List.class,
+                        String.class,
+                        controller.HomeController.class)
+                        .invoke(history, client.frame, client.in, client.out, rows, client.currentUsername, client.homeController);
             } catch (Exception e) {
                 e.printStackTrace();
                 handleConnectionError();

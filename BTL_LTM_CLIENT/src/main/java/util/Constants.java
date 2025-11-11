@@ -30,7 +30,7 @@ public class Constants {
     public static final String TITLE_GAME = "Game tính nhanh";
     
     // UI Dimensions
-    public static final int WINDOW_WIDTH = 800;
+    public static final int WINDOW_WIDTH = 1000;
     public static final int WINDOW_HEIGHT = 600;
     public static final int TEXT_FIELD_COLUMNS = 15;
     public static final int SPLIT_PANE_WEIGHT = 80; // percentage

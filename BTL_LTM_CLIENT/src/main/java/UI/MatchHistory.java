@@ -12,27 +12,23 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.util.List;
 
-public class Rank extends BaseUI {
+public class MatchHistory extends BaseUI {
 
     private String username;
     private HomeController homeController;
 
-    public void showRank(JFrame frame, BufferedReader in, BufferedWriter out, List<String[]> rows, String username, HomeController homeController) {
+    public void showMatchHistory(JFrame frame, BufferedReader in, BufferedWriter out, List<String[]> rows, String username, HomeController homeController) {
         setupFrame(frame, in, out);
         this.username = username;
         this.homeController = homeController;
         showUI(frame, in, out);
 
         SwingUtilities.invokeLater(() -> {
-            this.allRows = rows;
             populateTable(rows);
         });
     }
 
     private JTable table;
-    private JTextField searchField;
-    private JButton searchBtn;
-    private List<String[]> allRows;
 
     @Override
     public void showUI(JFrame frame, BufferedReader in, BufferedWriter out) {
@@ -64,7 +60,7 @@ public class Rank extends BaseUI {
         headerPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
         headerPanel.setPreferredSize(new Dimension(0, 120));
 
-        JLabel titleLabel = new JLabel("🏆 Bảng Xếp Hạng");
+        JLabel titleLabel = new JLabel("📜 Lịch Sử Đấu");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
 
@@ -79,32 +75,7 @@ public class Rank extends BaseUI {
         contentPanel.setOpaque(false);
         contentPanel.setBorder(new EmptyBorder(20, 30, 30, 30));
 
-        JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
-        searchPanel.setOpaque(false);
-
-        searchField = new JTextField() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(new Color(248, 250, 252));
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                super.paintComponent(g);
-            }
-        };
-        searchField.setBorder(new EmptyBorder(10, 15, 10, 15));
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchField.setOpaque(false);
-        searchField.setForeground(new Color(30, 41, 59));
-
-        searchBtn = createModernButton("🔍 Tìm kiếm", new Color(99, 110, 250), new Color(79, 90, 230));
-        searchBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        searchBtn.setPreferredSize(new Dimension(130, 44));
-
-        searchPanel.add(searchField, BorderLayout.CENTER);
-        searchPanel.add(searchBtn, BorderLayout.EAST);
-
-        String[] columns = {"#", "Người chơi", "ELO", "Tổng điểm", "Số trận"};
+        String[] columns = {"Trận #", "Đối thủ", "Điểm", "Thay đổi ELO", "Kết quả", "Thời gian"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -127,13 +98,14 @@ public class Rank extends BaseUI {
         header.setPreferredSize(new Dimension(0, 45));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(226, 232, 240)));
 
-        DefaultTableCellRenderer rankRenderer = new DefaultTableCellRenderer() {
+        DefaultTableCellRenderer matchNumberRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, 
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(SwingConstants.CENTER);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
+                setFont(new Font("Segoe UI", Font.BOLD, 13));
                 
                 if (!isSelected) {
                     if (row % 2 == 0) {
@@ -141,30 +113,13 @@ public class Rank extends BaseUI {
                     } else {
                         c.setBackground(new Color(249, 250, 251));
                     }
-                    
-                    String val = value.toString();
-                    if (val.contains("🥇")) {
-                        c.setBackground(new Color(255, 250, 230));
-                        setForeground(new Color(217, 119, 6));
-                        setFont(new Font("Segoe UI", Font.BOLD, 14));
-                    } else if (val.contains("🥈")) {
-                        c.setBackground(new Color(248, 250, 252));
-                        setForeground(new Color(100, 116, 139));
-                        setFont(new Font("Segoe UI", Font.BOLD, 14));
-                    } else if (val.contains("🥉")) {
-                        c.setBackground(new Color(254, 243, 231));
-                        setForeground(new Color(194, 120, 3));
-                        setFont(new Font("Segoe UI", Font.BOLD, 14));
-                    } else {
-                        setForeground(new Color(71, 85, 105));
-                        setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                    }
+                    setForeground(new Color(99, 110, 250));
                 }
                 return c;
             }
         };
         
-        DefaultTableCellRenderer nameRenderer = new DefaultTableCellRenderer() {
+        DefaultTableCellRenderer opponentRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, 
                     boolean isSelected, boolean hasFocus, int row, int column) {
@@ -185,7 +140,28 @@ public class Rank extends BaseUI {
             }
         };
         
-        DefaultTableCellRenderer numberRenderer = new DefaultTableCellRenderer() {
+        DefaultTableCellRenderer scoreRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, 
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setBorder(new EmptyBorder(0, 10, 0, 10));
+                setFont(new Font("Segoe UI", Font.BOLD, 14));
+                
+                if (!isSelected) {
+                    if (row % 2 == 0) {
+                        c.setBackground(Color.WHITE);
+                    } else {
+                        c.setBackground(new Color(249, 250, 251));
+                    }
+                    setForeground(new Color(139, 92, 246));
+                }
+                return c;
+            }
+        };
+        
+        DefaultTableCellRenderer eloRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, 
                     boolean isSelected, boolean hasFocus, int row, int column) {
@@ -201,10 +177,11 @@ public class Rank extends BaseUI {
                         c.setBackground(new Color(249, 250, 251));
                     }
                     
-                    if (column == 2) {
-                        setForeground(new Color(99, 110, 250));
-                    } else if (column == 3) {
+                    String val = value.toString();
+                    if (val.contains("🔼") || val.startsWith("+")) {
                         setForeground(new Color(16, 185, 129));
+                    } else if (val.contains("🔽") || val.startsWith("-")) {
+                        setForeground(new Color(239, 68, 68));
                     } else {
                         setForeground(new Color(71, 85, 105));
                     }
@@ -212,23 +189,83 @@ public class Rank extends BaseUI {
                 return c;
             }
         };
+        
+        DefaultTableCellRenderer resultRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, 
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setBorder(new EmptyBorder(0, 10, 0, 10));
+                setFont(new Font("Segoe UI", Font.BOLD, 13));
+                
+                if (!isSelected) {
+                    if (row % 2 == 0) {
+                        c.setBackground(Color.WHITE);
+                    } else {
+                        c.setBackground(new Color(249, 250, 251));
+                    }
+                    
+                    String val = value.toString();
+                    if (val.contains("✅") || val.toUpperCase().contains("THẮNG")) {
+                        setForeground(new Color(16, 185, 129));
+                        c.setBackground(new Color(236, 253, 245));
+                    } else if (val.contains("❌") || val.toUpperCase().contains("THUA")) {
+                        setForeground(new Color(239, 68, 68));
+                        c.setBackground(new Color(254, 242, 242));
+                    } else if (val.contains("⚖️") || val.toUpperCase().contains("HÒA")) {
+                        setForeground(new Color(59, 130, 246));
+                        c.setBackground(new Color(239, 246, 255));
+                    }
+                }
+                return c;
+            }
+        };
+        
+        DefaultTableCellRenderer timeRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, 
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setBorder(new EmptyBorder(0, 10, 0, 10));
+                setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                
+                if (!isSelected) {
+                    if (row % 2 == 0) {
+                        c.setBackground(Color.WHITE);
+                    } else {
+                        c.setBackground(new Color(249, 250, 251));
+                    }
+                    setForeground(new Color(100, 116, 139));
+                }
+                return c;
+            }
+        };
 
-        table.getColumnModel().getColumn(0).setCellRenderer(rankRenderer);
+        table.getColumnModel().getColumn(0).setCellRenderer(matchNumberRenderer);
         table.getColumnModel().getColumn(0).setPreferredWidth(80);
         table.getColumnModel().getColumn(0).setMaxWidth(100);
 
-        table.getColumnModel().getColumn(1).setCellRenderer(nameRenderer);
-        table.getColumnModel().getColumn(1).setPreferredWidth(250);
+        table.getColumnModel().getColumn(1).setCellRenderer(opponentRenderer);
+        table.getColumnModel().getColumn(1).setPreferredWidth(180);
 
-        for (int i = 2; i < 5; i++) {
-            table.getColumnModel().getColumn(i).setCellRenderer(numberRenderer);
-        }
+        table.getColumnModel().getColumn(2).setCellRenderer(scoreRenderer);
+        table.getColumnModel().getColumn(2).setPreferredWidth(100);
+
+        table.getColumnModel().getColumn(3).setCellRenderer(eloRenderer);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
+
+        table.getColumnModel().getColumn(4).setCellRenderer(resultRenderer);
+        table.getColumnModel().getColumn(4).setPreferredWidth(120);
+
+        table.getColumnModel().getColumn(5).setCellRenderer(timeRenderer);
+        table.getColumnModel().getColumn(5).setPreferredWidth(200);
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240), 1));
         scrollPane.getViewport().setBackground(Color.WHITE);
 
-        contentPanel.add(searchPanel, BorderLayout.NORTH);
         contentPanel.add(scrollPane, BorderLayout.CENTER);
 
         mainCard.add(headerPanel, BorderLayout.NORTH);
@@ -245,43 +282,42 @@ public class Rank extends BaseUI {
             }
         });
 
-        searchBtn.addActionListener(e -> doSearch());
-        searchField.addActionListener(e -> doSearch());
-
         refreshFrame(container);
     }
 
     public void populateTable(List<String[]> rows) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
-        int rank = 1;
         if (rows != null) {
             for (String[] r : rows) {
-                String rankEmoji = "";
-                if (rank == 1) rankEmoji = "🥇 ";
-                else if (rank == 2) rankEmoji = "🥈 ";
-                else if (rank == 3) rankEmoji = "🥉 ";
-                
+                String result = r[4];
+                String resultIcon = "";
+                if (result.equalsIgnoreCase("WIN") || result.equalsIgnoreCase("THẮNG")) {
+                    resultIcon = "✅ Thắng";
+                } else if (result.equalsIgnoreCase("LOSE") || result.equalsIgnoreCase("THUA")) {
+                    resultIcon = "❌ Thua";
+                } else if (result.equalsIgnoreCase("DRAW") || result.equalsIgnoreCase("HÒA")) {
+                    resultIcon = "⚖️ Hòa";
+                } else {
+                    resultIcon = result;
+                }
+
+                String eloChange = r[3];
+                if (eloChange.startsWith("+")) {
+                    eloChange = "🔼 " + eloChange;
+                } else if (eloChange.startsWith("-")) {
+                    eloChange = "🔽 " + eloChange;
+                }
+
                 model.addRow(new Object[]{
-                    rankEmoji + rank,
-                    r[0],
+                    "#" + r[0],
                     r[1],
                     r[2],
-                    (r.length > 3 ? r[3] : "0")
+                    eloChange,
+                    resultIcon,
+                    r[5]
                 });
-                rank++;
             }
-        }
-    }
-
-    private void doSearch() {
-        String q = searchField.getText();
-        try {
-            if (homeController != null) {
-                homeController.getRank(in, out, q);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
@@ -358,5 +394,4 @@ public class Rank extends BaseUI {
         return button;
     }
 }
-
 
