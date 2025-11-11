@@ -235,8 +235,10 @@ public class EventHandler {
                 rankClass.getMethod("showRank", javax.swing.JFrame.class,
                         java.io.BufferedReader.class,
                         java.io.BufferedWriter.class,
-                        java.util.List.class)
-                        .invoke(rank, client.frame, client.in, client.out, rows);
+                        java.util.List.class,
+                        String.class,
+                        controller.HomeController.class)
+                        .invoke(rank, client.frame, client.in, client.out, rows, client.currentUsername, client.homeController);
             } catch (Exception e) {
                 e.printStackTrace();
                 handleConnectionError();

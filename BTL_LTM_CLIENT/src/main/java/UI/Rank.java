@@ -11,8 +11,13 @@ import java.util.List;
 
 public class Rank extends BaseUI {
 
-    public void showRank(JFrame frame, BufferedReader in, BufferedWriter out, List<String[]> rows) {
+    private String username;
+    private HomeController homeController;
+
+    public void showRank(JFrame frame, BufferedReader in, BufferedWriter out, List<String[]> rows, String username, HomeController homeController) {
         setupFrame(frame, in, out);
+        this.username = username;
+        this.homeController = homeController;
         showUI(frame, in, out);
 
         SwingUtilities.invokeLater(() -> {
@@ -59,7 +64,7 @@ public class Rank extends BaseUI {
         backBtn.addActionListener(e -> {
             try {
                 Home home = new Home();
-                home.showHome(frame, in, out, "", new HomeController());
+                home.showHome(frame, in, out, username != null ? username : "", homeController);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -85,8 +90,9 @@ public class Rank extends BaseUI {
     private void doSearch() {
         String q = searchField.getText();
         try {
-            HomeController controller = new HomeController();
-            controller.getRank(in, out, q);
+            if (homeController != null) {
+                homeController.getRank(in, out, q);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
