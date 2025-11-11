@@ -16,7 +16,7 @@ public class MatchUI extends BaseUI {
     private JPanel numberPanel, operatorPanel;
     private JComboBox<String> questionCombo;
     private JTextField expressionField;
-    private JButton submitBtn;
+    private JButton submitBtn, clearBtn, backspaceBtn;
     private JSONArray questions;
     private int myScore = 0;
     private MatchController matchController;
@@ -115,9 +115,20 @@ public class MatchUI extends BaseUI {
 
         JPanel exprPanel = new JPanel(new BorderLayout());
         expressionField = new JTextField();
+        expressionField.setEditable(false); // Không cho nhập trực tiếp
+
+        // Panel chứa các nút điều khiển
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        backspaceBtn = new JButton("⌫ Xóa");
+        clearBtn = new JButton("🗑 Xóa hết");
         submitBtn = new JButton("✅ Kiểm tra");
+
+        buttonPanel.add(backspaceBtn);
+        buttonPanel.add(clearBtn);
+        buttonPanel.add(submitBtn);
+
         exprPanel.add(expressionField, BorderLayout.CENTER);
-        exprPanel.add(submitBtn, BorderLayout.EAST);
+        exprPanel.add(buttonPanel, BorderLayout.EAST);
         bottomPanel.add(exprPanel);
 
         container.add(bottomPanel, BorderLayout.SOUTH);
@@ -125,6 +136,17 @@ public class MatchUI extends BaseUI {
         // ====== LOGIC ======
         questionCombo.addActionListener(e -> updateQuestion(questionCombo.getSelectedIndex()));
         submitBtn.addActionListener(e -> handleSubmit());
+
+        // Xóa từng ký tự (backspace)
+        backspaceBtn.addActionListener(e -> {
+            String current = expressionField.getText();
+            if (!current.isEmpty()) {
+                expressionField.setText(current.substring(0, current.length() - 1));
+            }
+        });
+
+        // Xóa tất cả
+        clearBtn.addActionListener(e -> expressionField.setText(""));
 
         updateQuestion(0);
         refreshFrame(container);
