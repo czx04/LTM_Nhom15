@@ -99,12 +99,15 @@ public class UsersListPanel extends JPanel {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Shadow
                 g2d.setColor(new Color(0, 0, 0, 6));
                 g2d.fillRoundRect(2, 3, getWidth() - 4, getHeight() - 3, 14, 14);
 
-                // Card background
-                g2d.setColor(Color.WHITE);
+// Card background
+// ĐÂY LÀ CHỖ CẦN SỬA
+// Thay vì dùng Color.WHITE, hãy dùng new Color với 4 tham số (R, G, B, Alpha)
+                g2d.setColor(new Color(255, 255, 255, 100)); // <-- SỬA DÒNG NÀY
+
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
             }
         };
