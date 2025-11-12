@@ -19,12 +19,12 @@ public class MatchUI extends BaseUI {
     private JButton submitBtn, clearBtn, backspaceBtn;
     private JSONArray questions;
     private int myScore = 0;
-    private int opponentScore = 0; // Track điểm đối thủ
+    private int opponentScore = 0;
     private MatchController matchController;
     private Set<Integer> answeredQuestions = new HashSet<>();
-    private int currentQuestionIndex = 0; // Câu hỏi hiện tại đang làm (câu mới nhất chưa hoàn thành)
-    private int viewingQuestionIndex = 0; // Câu hỏi đang xem trên màn hình
-    private Set<String> allowedNumbers = new HashSet<>(); // Danh sách số được phép sử dụng
+    private int currentQuestionIndex = 0;
+    private int viewingQuestionIndex = 0;
+    private Set<String> allowedNumbers = new HashSet<>();
     private Timer countdownTimer;
     private int remainingSeconds = 0;
     private String matchId;
@@ -36,7 +36,6 @@ public class MatchUI extends BaseUI {
      */
     @Override
     public void showUI(JFrame frame, BufferedReader in, BufferedWriter out) {
-        // Gọi UI mặc định khi chưa có dữ liệu match
         showUI(frame, in, out, "03:00", "0");
     }
 
@@ -51,7 +50,6 @@ public class MatchUI extends BaseUI {
         this.matchId = matchId;
         this.matchController = new MatchController(in, out, this);
 
-        // Set matchInfo ngay sau khi tạo matchController
         if (this.username != null) {
             System.out.println("Username already set, calling setMatchInfo: " + this.username);
             this.matchController.setMatchInfo(this.matchId, this.username);
@@ -85,7 +83,6 @@ public class MatchUI extends BaseUI {
         JPanel container = new JPanel(new BorderLayout(10, 10));
         container.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // ====== HEADER ======
         JPanel topPanel = new JPanel(new GridLayout(3, 2));
         timeLabel = new JLabel("⏱ Thời gian: " + time);
         opponentNameLabel = new JLabel("👤 Đối thủ: " + scoreOpponent);
@@ -100,10 +97,7 @@ public class MatchUI extends BaseUI {
 
         container.add(topPanel, BorderLayout.NORTH);
 
-        // ====== CENTER (Câu hỏi + chọn câu dạng buttons) ======
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
-
-        // Panel chứa các button câu hỏi (1 2 3 4 5 ...)
         questionButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 5));
         questionButtonsPanel.setBorder(BorderFactory.createTitledBorder("Chọn câu hỏi"));
         questionButtons = new JButton[questions.length()];
@@ -114,19 +108,15 @@ public class MatchUI extends BaseUI {
             btn.setPreferredSize(new Dimension(50, 50));
             btn.setFont(new Font("Arial", Font.BOLD, 16));
 
-            // Chỉ enable câu đầu tiên, các câu khác disable
             if (i == 0) {
-                btn.setBackground(new Color(255, 215, 0)); // Màu vàng cho câu hiện tại
+                btn.setBackground(new Color(255, 215, 0));
                 btn.setEnabled(true);
             } else {
                 btn.setBackground(Color.LIGHT_GRAY);
                 btn.setEnabled(false);
             }
 
-            btn.addActionListener(e -> {
-                // Cho phép xem lại câu đã trả lời đúng
-                updateQuestion(index);
-            });
+            btn.addActionListener(e -> updateQuestion(index));
 
             questionButtons[i] = btn;
             questionButtonsPanel.add(btn);
@@ -134,7 +124,6 @@ public class MatchUI extends BaseUI {
 
         centerPanel.add(questionButtonsPanel, BorderLayout.NORTH);
 
-        // Label hiển thị câu hỏi và feedback
         JPanel questionAndFeedbackPanel = new JPanel(new BorderLayout(5, 5));
         questionLabel = new JLabel("", SwingConstants.LEFT);
         questionLabel.setFont(new Font("Arial", Font.BOLD, 20));
@@ -150,7 +139,6 @@ public class MatchUI extends BaseUI {
         centerPanel.add(questionAndFeedbackPanel, BorderLayout.CENTER);
         container.add(centerPanel, BorderLayout.CENTER);
 
-        // ====== BOTTOM (List Number + Operator + Nhập biểu thức) ======
         JPanel bottomPanel = new JPanel(new GridLayout(3, 1, 5, 5));
 
         numberPanel = new JPanel(new FlowLayout());
@@ -162,9 +150,8 @@ public class MatchUI extends BaseUI {
 
         JPanel exprPanel = new JPanel(new BorderLayout());
         expressionField = new JTextField();
-        expressionField.setEditable(false); // Không cho nhập trực tiếp
+        expressionField.setEditable(false);
 
-        // Panel chứa các nút điều khiển
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         backspaceBtn = new JButton("⌫ Xóa");
         clearBtn = new JButton("🗑 Xóa hết");
@@ -180,10 +167,8 @@ public class MatchUI extends BaseUI {
 
         container.add(bottomPanel, BorderLayout.SOUTH);
 
-        // ====== LOGIC ======
         submitBtn.addActionListener(e -> handleSubmit());
 
-        // Xóa từng ký tự (backspace)
         backspaceBtn.addActionListener(e -> {
             String current = expressionField.getText();
             if (!current.isEmpty()) {
@@ -191,10 +176,8 @@ public class MatchUI extends BaseUI {
             }
         });
 
-        // Xóa tất cả
         clearBtn.addActionListener(e -> expressionField.setText(""));
 
-        // Hiển thị câu hỏi đầu tiên
         updateQuestion(0);
         refreshFrame(container);
     }
@@ -203,12 +186,11 @@ public class MatchUI extends BaseUI {
      * Hiển thị dữ liệu câu hỏi tương ứng
      */
     private void updateQuestion(int index) {
-        viewingQuestionIndex = index; // Cập nhật câu đang xem
+        viewingQuestionIndex = index;
 
         JSONObject q = questions.getJSONObject(index);
         int qid = q.getInt("id");
 
-        // Hiển thị trạng thái câu hỏi
         String statusText = "";
         if (answeredQuestions.contains(qid)) {
             statusText = " ✅ [Đã hoàn thành]";
@@ -220,7 +202,6 @@ public class MatchUI extends BaseUI {
 
         questionLabel.setText("Câu " + (index + 1) + statusText + " - Mục tiêu: " + q.getInt("target"));
 
-        // Lưu danh sách số được phép sử dụng
         allowedNumbers.clear();
         String[] nums = q.getString("numbers").split(",");
         for (String n : nums) {
@@ -247,7 +228,6 @@ public class MatchUI extends BaseUI {
         operatorPanel.repaint();
         expressionField.setText("");
 
-        // Xóa feedback khi chuyển câu hỏi
         feedbackLabel.setText("");
         feedbackLabel.setBackground(null);
     }
@@ -257,7 +237,6 @@ public class MatchUI extends BaseUI {
      */
     private void handleSubmit() {
         try {
-            // Lấy câu hỏi đang xem trên màn hình
             JSONObject q = questions.getJSONObject(viewingQuestionIndex);
             int qid = q.getInt("id");
             int target = q.getInt("target");
@@ -268,20 +247,17 @@ public class MatchUI extends BaseUI {
                 return;
             }
 
-            // Validate chống gian lận
             if (!validateExpression(expr)) {
                 showFeedback("🚫 Gian lận phát hiện! Bạn đang sử dụng số không có trong danh sách.",
                         new Color(220, 38, 38));
                 return;
             }
 
-            // Kiểm tra xem câu đang xem đã trả lời đúng chưa
             if (answeredQuestions.contains(qid)) {
                 showFeedback("☑ Bạn đã trả lời đúng câu hỏi này rồi! Không thể submit lại.", new Color(59, 130, 246));
                 return;
             }
 
-            // Chỉ cho phép submit câu hiện tại đang làm
             if (viewingQuestionIndex != currentQuestionIndex) {
                 showFeedback("⚠️ Bạn chỉ có thể làm câu " + (currentQuestionIndex + 1) + "!", new Color(255, 165, 0));
                 return;
@@ -299,7 +275,6 @@ public class MatchUI extends BaseUI {
      */
     public void updateTimeAndScore(String time, String oppScore) {
         timeLabel.setText("⏱ Thời gian: " + time);
-        // Không cập nhật điểm đối thủ ở đây nữa, dùng increaseOpponentScore() riêng
     }
 
     /**
@@ -310,33 +285,25 @@ public class MatchUI extends BaseUI {
             return;
         myScore++;
 
-        // ✅ Đánh dấu câu hiện tại là đã trả lời đúng
         JSONObject q = questions.getJSONObject(currentQuestionIndex);
         answeredQuestions.add(q.getInt("id"));
 
         myScoreLabel.setText("⭐ Điểm của bạn: " + myScore);
 
-        // Hiển thị thông báo đúng
         showFeedback("✅ Đúng rồi! Chuyển sang câu tiếp theo...", new Color(16, 185, 129));
 
-        // Đánh dấu button câu hiện tại là đã hoàn thành (màu xanh lá)
-        // KHÔNG disable để vẫn có thể xem lại
         questionButtons[currentQuestionIndex].setBackground(new Color(34, 197, 94));
         questionButtons[currentQuestionIndex].setForeground(Color.WHITE);
 
-        // Chuyển sang câu tiếp theo sau 1.5 giây
         Timer delayTimer = new Timer(1500, e -> {
             currentQuestionIndex++;
             if (currentQuestionIndex < questions.length()) {
-                // Enable và highlight câu tiếp theo
                 questionButtons[currentQuestionIndex].setEnabled(true);
                 questionButtons[currentQuestionIndex].setBackground(new Color(255, 215, 0));
                 questionButtons[currentQuestionIndex].setForeground(Color.BLACK);
 
-                // Hiển thị câu hỏi mới (cũng cập nhật viewingQuestionIndex)
                 updateQuestion(currentQuestionIndex);
             } else {
-                // Đã hoàn thành tất cả câu hỏi
                 showFeedback("🎉 Bạn đã hoàn thành tất cả câu hỏi!", new Color(16, 185, 129));
             }
         });
@@ -351,7 +318,6 @@ public class MatchUI extends BaseUI {
         if (opponentScoreLabel == null)
             return;
 
-        // Tăng điểm đối thủ
         opponentScore++;
         opponentScoreLabel.setText("🎯 Điểm đối thủ: " + opponentScore);
     }
@@ -379,20 +345,16 @@ public class MatchUI extends BaseUI {
         feedbackLabel.setBackground(bgColor);
         feedbackLabel.setForeground(Color.WHITE);
 
-        // Tự động ẩn feedback sau vài giây
-        // - Warning (cam) và Info (xanh dương): 3 giây
-        // - Error (đỏ): 2.5 giây
-        // - Cheat (đỏ đậm): 4 giây (để người chơi nhận ra lỗi nghiêm trọng)
         Color orange = new Color(255, 165, 0);
         Color blue = new Color(59, 130, 246);
         Color red = new Color(239, 68, 68);
         Color darkRed = new Color(220, 38, 38);
 
-        int delay = 3000; // mặc định 3 giây
+        int delay = 3000;
         if (bgColor.equals(red)) {
-            delay = 2500; // lỗi sai thì 2.5 giây
+            delay = 2500;
         } else if (bgColor.equals(darkRed)) {
-            delay = 4000; // gian lận thì 4 giây để cảnh báo nghiêm trọng
+            delay = 4000;
         }
 
         if (bgColor.equals(orange) || bgColor.equals(blue) || bgColor.equals(red) || bgColor.equals(darkRed)) {
@@ -411,24 +373,19 @@ public class MatchUI extends BaseUI {
      */
     private boolean validateExpression(String expr) {
         if (expr == null || expr.isEmpty()) {
-            return false; // Biểu thức rỗng không hợp lệ để submit
+            return false;
         }
 
-        // Tách các số ra khỏi biểu thức (bỏ qua toán tử +, -, *, /)
         String[] tokens = expr.split("[+\\-*/]");
 
-        // Dùng for loop để check từng số
         for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i].trim();
 
-            // Bỏ qua token rỗng (ví dụ: "5+" sẽ split thành ["5", ""])
             if (token.isEmpty()) {
                 continue;
             }
 
-            // Kiểm tra xem số này có trong danh sách cho phép không
             if (!allowedNumbers.contains(token)) {
-                // Gian lận phát hiện!
                 System.out.println(
                         "⚠️ Gian lận phát hiện: Số '" + token + "' không có trong danh sách: " + allowedNumbers);
                 return false;
@@ -449,22 +406,18 @@ public class MatchUI extends BaseUI {
      * Bắt đầu đếm ngược thời gian
      */
     private void startCountdown(String timeStr) {
-        // Dừng timer cũ nếu có
         if (countdownTimer != null && countdownTimer.isRunning()) {
             countdownTimer.stop();
         }
 
-        // Parse thời gian từ format "MM:SS"
         remainingSeconds = parseTimeToSeconds(timeStr);
 
-        // Tạo timer mới đếm ngược mỗi giây
         countdownTimer = new Timer(1000, e -> {
             if (remainingSeconds > 0) {
                 remainingSeconds--;
                 String formattedTime = formatSecondsToTime(remainingSeconds);
                 timeLabel.setText("⏱ Thời gian: " + formattedTime);
             } else {
-                // Hết thời gian
                 countdownTimer.stop();
                 handleTimeUp();
             }
@@ -483,7 +436,7 @@ public class MatchUI extends BaseUI {
             int seconds = Integer.parseInt(parts[1]);
             return minutes * 60 + seconds;
         } catch (Exception e) {
-            return 180; // Mặc định 3 phút nếu parse lỗi
+            return 180;
         }
     }
 
@@ -511,12 +464,10 @@ public class MatchUI extends BaseUI {
     private void handleTimeUp() {
         showFeedback("⏰ Hết thời gian! Đang gửi kết quả...", new Color(239, 68, 68));
 
-        // Disable tất cả các nút
         submitBtn.setEnabled(false);
         clearBtn.setEnabled(false);
         backspaceBtn.setEnabled(false);
 
-        // Gửi kết quả về server
         if (matchController != null) {
             matchController.endMatch(myScore, opponentScore);
         } else {
