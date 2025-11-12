@@ -49,7 +49,7 @@ public class MatchController {
     /**
      * Gửi request kết thúc trận đấu khi hết giờ
      */
-    public void endMatch(int myScore) {
+    public void endMatch(int myScore, int opponentScore) {
         try {
             if (matchId == null || username == null) {
                 String error = "Lỗi: matchId hoặc username chưa được set!\n" +
@@ -59,13 +59,19 @@ public class MatchController {
                 return;
             }
 
-            // Format: MATCH_END|matchId|username|score
-            out.write("MATCH_END|" + matchId + "|" + username + "|" + myScore);
+            // Format mới: MATCH_END|matchId|username|myScore|opponentScore
+            String payload = String.join("|",
+                    "MATCH_END",
+                    matchId,
+                    username,
+                    String.valueOf(myScore),
+                    String.valueOf(opponentScore));
+
+            out.write(payload);
             out.newLine();
             out.flush();
 
-            System.out.println("Sent MATCH_END to server: matchId=" + matchId +
-                    ", username=" + username + ", score=" + myScore);
+            System.out.println("Sent MATCH_END to server: " + payload);
         } catch (IOException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Lỗi khi gửi kết quả trận đấu: " + e.getMessage());

@@ -72,7 +72,8 @@ public class ClientHandler extends Thread {
                         if (opponent != null) {
                             try {
                                 opponent.writeEvent("OPPONENT_LEFT|" + username + " đã ngắt kết nối");
-                            } catch (IOException ignored) {}
+                            } catch (IOException ignored) {
+                            }
                         }
                         // Xóa khỏi trận
                         SocketController.removePlayerFromMatch(username);
