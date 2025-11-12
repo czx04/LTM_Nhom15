@@ -2,11 +2,8 @@ package util;
 
 public class Constants {
     // Server Commands
-    public static final String CMD_REGISTER = "REGISTER";
-    public static final String CMD_LOGIN = "LOGIN";
-    public static final String CMD_LOGOUT = "LOGOUT";
-    public static final String CMD_GET_USERS_ONLINE = "GET_USERS_ONLINE";
-    
+    public static final String LOGIN_SUCCESS = "LOGIN_SUCCESS";
+    public static final String LOGIN_FAIL = "FAILLOGIN";
     // Server Responses
     public static final String RESPONSE_LOGGEDIN = "LOGGEDIN";
     public static final String RESPONSE_REGISTED = "REGISTED";

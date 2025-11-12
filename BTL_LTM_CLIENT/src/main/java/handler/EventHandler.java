@@ -65,7 +65,7 @@ public class EventHandler {
 
     public void handleLoginResponse(Client client, String[] response) {
         if (Constants.RESPONSE_LOGGEDIN.equals(response[1])) {
-            System.out.println("LOGIN OK");
+            System.out.println(response);
             // Lưu username vào client
             client.currentUsername = response[2];
             try {
@@ -83,7 +83,7 @@ public class EventHandler {
                 showError(Constants.MSG_CONNECTION_ERROR);
             }
         } else {
-            showWarning(Constants.MSG_LOGIN_FAILED);
+//            showWarning(Constants.MSG_LOGIN_FAILED);
         }
     }
 
