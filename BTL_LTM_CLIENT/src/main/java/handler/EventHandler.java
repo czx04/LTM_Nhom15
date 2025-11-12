@@ -243,7 +243,8 @@ public class EventHandler {
                         java.util.List.class,
                         String.class,
                         controller.HomeController.class)
-                        .invoke(rank, client.frame, client.in, client.out, rows, client.currentUsername, client.homeController);
+                        .invoke(rank, client.frame, client.in, client.out, rows, client.currentUsername,
+                                client.homeController);
             } catch (Exception e) {
                 e.printStackTrace();
                 handleConnectionError();
@@ -274,7 +275,8 @@ public class EventHandler {
                         java.util.List.class,
                         String.class,
                         controller.HomeController.class)
-                        .invoke(history, client.frame, client.in, client.out, rows, client.currentUsername, client.homeController);
+                        .invoke(history, client.frame, client.in, client.out, rows, client.currentUsername,
+                                client.homeController);
             } catch (Exception e) {
                 e.printStackTrace();
                 handleConnectionError();
@@ -332,7 +334,7 @@ public class EventHandler {
         if (client.currentUI instanceof UI.MatchUI matchUI) {
             if (correct) {
                 matchUI.increaseMyScore();
-                JOptionPane.showMessageDialog(null, "🎉 Chính xác! +1 điểm");
+                // Feedback đã hiển thị trong UI, không cần popup
             } else {
                 matchUI.notifyWrong();
             }

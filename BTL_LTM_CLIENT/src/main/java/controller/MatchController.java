@@ -40,7 +40,7 @@ public class MatchController {
     public void onAnswerResult(boolean correct) {
         if (correct) {
             ui.increaseMyScore();
-            JOptionPane.showMessageDialog(null, "🎉 Chính xác! +1 điểm");
+            // Không dùng popup nữa, feedback hiển thị trong UI
         } else {
             ui.notifyWrong();
         }
