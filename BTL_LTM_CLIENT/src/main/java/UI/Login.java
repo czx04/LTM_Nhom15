@@ -10,10 +10,16 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.net.URL;
+import javax.swing.Timer;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class Login extends BaseUI {
+
     private Register register = new Register();
+    private JLabel errorLabel; // <-- THÊM DÒNG NÀY: Khai báo label lỗi
     private static final Color PRIMARY_BLUE = new Color(38, 97, 187);
+
     private static final Color DARK_BLUE = new Color(4, 39, 227);
     private static final Color LIGHT_BLUE = new Color(200, 230, 255);
     private static final Color TEXT_DARK = new Color(0, 0, 0);
@@ -68,7 +74,8 @@ public class Login extends BaseUI {
             }
         };
         cardPanel.setOpaque(false);
-        cardPanel.setPreferredSize(new Dimension(380, 450)); // Slightly larger card
+        // Tăng chiều cao của cardPanel để chứa label lỗi
+        cardPanel.setPreferredSize(new Dimension(380, 480)); // <-- SỬA DÒNG NÀY (từ 450 lên 480)
         cardPanel.setBorder(new EmptyBorder(36, 42, 36, 42)); // Increased padding
 
         GridBagConstraints cardGbc = new GridBagConstraints();
@@ -174,8 +181,23 @@ public class Login extends BaseUI {
         cardGbc.gridx = 0;
         cardGbc.gridy = 4;
         cardGbc.gridwidth = 2;
-        cardGbc.insets = new Insets(0, 0, 30, 0); // More space below password field
+        // Giảm khoảng cách dưới ô password để chèn label lỗi
+        cardGbc.insets = new Insets(0, 0, 10, 0); // <-- SỬA DÒNG NÀY (từ 30 xuống 10)
         cardPanel.add(passwordField, cardGbc);
+
+        // <-- KHỐI CODE MỚI: Thêm Label Lỗi vào Card Panel -->
+        errorLabel = new JLabel(" "); // Thêm khoảng trắng để giữ chỗ
+        errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        errorLabel.setForeground(Color.RED);
+        errorLabel.setHorizontalAlignment(JLabel.CENTER);
+        errorLabel.setVisible(false); // Ẩn đi lúc ban đầu
+
+        cardGbc.gridx = 0;
+        cardGbc.gridy = 5; // Nằm ở vị trí grid y = 5
+        cardGbc.gridwidth = 2;
+        cardGbc.insets = new Insets(0, 0, 10, 0); // Khoảng cách bên dưới label lỗi
+        cardPanel.add(errorLabel, cardGbc);
+        // <-- KẾT THÚC KHỐI CODE MỚI -->
 
         JButton loginButton = new JButton("Đăng Nhập");
         loginButton.setFont(new Font("Segoe UI", Font.BOLD, 18)); // Bolder and larger font
@@ -194,7 +216,7 @@ public class Login extends BaseUI {
             }
         });
         cardGbc.gridx = 0;
-        cardGbc.gridy = 5;
+        cardGbc.gridy = 6; // <-- SỬA DÒNG NÀY (từ 5 lên 6)
         cardGbc.gridwidth = 2;
         cardGbc.insets = new Insets(10, 0, 15, 0);
         cardPanel.add(loginButton, cardGbc);
@@ -216,7 +238,7 @@ public class Login extends BaseUI {
             }
         });
         cardGbc.gridx = 0;
-        cardGbc.gridy = 6;
+        cardGbc.gridy = 7; // <-- SỬA DÒNG NÀY (từ 6 lên 7)
         cardGbc.gridwidth = 2;
         cardGbc.insets = new Insets(0, 0, 0, 0);
         cardPanel.add(registerButton, cardGbc);
@@ -225,25 +247,70 @@ public class Login extends BaseUI {
         gbc.gridy = 0;
         mainPanel.add(cardPanel, gbc);
 
+        // <-- KHỐI CODE ĐƯỢC CHỈNH SỬA HOÀN TOÀN: ActionListener của loginButton -->
         loginButton.addActionListener(e -> {
+            // 1. Ẩn lỗi cũ mỗi khi bấm nút
+            errorLabel.setVisible(false);
+
             String username = usernameField.getText();
             String password = String.valueOf(passwordField.getPassword());
 
+            // 2. Xử lý lỗi validation (phía client)
             InputValidator.ValidationResult validation = InputValidator.validateLogin(username, password);
             if (!validation.isValid()) {
-                JOptionPane.showMessageDialog(null, validation.getMessage(),
-                        Constants.TITLE_WARNING, JOptionPane.WARNING_MESSAGE);
-                return;
+                // Thay vì JOptionPane
+                // JOptionPane.showMessageDialog(null, validation.getMessage(), ...);
+
+                // Hiển thị lỗi trên label
+                errorLabel.setText(validation.getMessage());
+                errorLabel.setVisible(true);
+                return; // Dừng lại
             }
 
+            // 3. Gọi server và xử lý kết quả (cả thành công và thất bại)
             executeAsyncTask(loginButton,
                     () -> authController.handleLogin(username, password, in, out),
                     result -> {
-                        System.out.println("Login request sent: " + result);
+                        String response = String.valueOf(result);
+                        System.err.println("MU XEM: " + response);
+                        if (response.startsWith(Constants.LOGIN_SUCCESS)) {
+                            System.out.println("Đăng nhập thành công!");
+                        } else if (response.startsWith("SENT")) {
+                            Timer timer = new Timer(300, new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    // Code bên trong này sẽ chạy SAU 200ms
+                                    errorLabel.setText("Sai tên đăng nhập hoặc mật khẩu");
+                                    errorLabel.setVisible(true);
+                                }
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
+                            Timer timer2 = new Timer(2000, new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    // Code bên trong này sẽ chạy SAU 200ms
+                                    errorLabel.setText("Sai tên đăng nhập hoặc mật khẩu");
+                                    errorLabel.setVisible(true);
+                                }
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
+                        } else {
+                            // Các trường hợp phản hồi không mong muốn
+                            errorLabel.setText("Lỗi không xác định từ máy chủ.");
+                            errorLabel.setVisible(true);
+                        }
                     },
-                    ex -> ResponseHandler.handleConnectionError()
+                    ex -> {
+                        // Xử lý lỗi kết nối (thay vì JOptionPane)
+                        // ResponseHandler.handleConnectionError(); // Dòng này có thể sẽ hiện JOptionPane
+                        errorLabel.setText("Không thể kết nối đến máy chủ.");
+                        errorLabel.setVisible(true);
+                    }
             );
         });
+        // <-- KẾT THÚC KHỐI CODE CHỈNH SỬA -->
 
         registerButton.addActionListener(e -> {
             showRegister();
