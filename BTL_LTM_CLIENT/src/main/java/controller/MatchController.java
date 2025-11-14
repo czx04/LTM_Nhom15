@@ -28,7 +28,6 @@ public class MatchController {
 
     public void submitAnswer(String expr, int target) {
         try {
-            // Gửi tới server
             out.write("SUBMIT_ANSWER|" + expr + "|" + target);
             out.newLine();
             out.flush();
@@ -40,7 +39,6 @@ public class MatchController {
     public void onAnswerResult(boolean correct) {
         if (correct) {
             ui.increaseMyScore();
-            JOptionPane.showMessageDialog(null, "🎉 Chính xác! +1 điểm");
         } else {
             ui.notifyWrong();
         }

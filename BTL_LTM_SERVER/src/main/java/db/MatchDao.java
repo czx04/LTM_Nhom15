@@ -13,7 +13,7 @@ public class MatchDao {
         String sql = "INSERT INTO matches (status) VALUES ('playing')";
 
         try (Connection conn = Connector.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             int rowsAffected = stmt.executeUpdate();
 
@@ -37,7 +37,7 @@ public class MatchDao {
         String sql = "INSERT INTO match_history (match_id, user_id, score) VALUES (?, ?, 0)";
 
         try (Connection conn = Connector.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, matchId);
             stmt.setInt(2, userId);
@@ -53,21 +53,18 @@ public class MatchDao {
         String sql = "INSERT INTO match_questions (match_id, target_value, numbers, allowed_ops) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = Connector.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             Random rand = new Random();
 
             for (int i = 0; i < numQuestions; i++) {
-                // Tạo số target ngẫu nhiên từ 10-100
                 int target = rand.nextInt(91) + 10;
 
-                // Tạo mảng 6 số ngẫu nhiên từ 1-20
                 int[] numbers = new int[6];
                 for (int j = 0; j < 6; j++) {
                     numbers[j] = rand.nextInt(20) + 1;
                 }
 
-                // Convert mảng thành JSON string
                 String numbersJson = "[" + numbers[0];
                 for (int j = 1; j < numbers.length; j++) {
                     numbersJson += "," + numbers[j];
@@ -92,7 +89,7 @@ public class MatchDao {
         String sql = "UPDATE match_history SET score = ? WHERE match_id = ? AND user_id = ?";
 
         try (Connection conn = Connector.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, score);
             stmt.setInt(2, matchId);
@@ -108,13 +105,12 @@ public class MatchDao {
         String sql = "UPDATE matches SET status = 'finished', winner_id = ? WHERE match_id = ?";
 
         try (Connection conn = Connector.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, winnerId);
             stmt.setInt(2, matchId);
             stmt.executeUpdate();
 
-            // Cập nhật is_winner trong match_history
             String updateHistorySql = "UPDATE match_history SET is_winner = TRUE WHERE match_id = ? AND user_id = ?";
             try (PreparedStatement historyStmt = conn.prepareStatement(updateHistorySql)) {
                 historyStmt.setInt(1, matchId);
@@ -126,4 +122,3 @@ public class MatchDao {
         }
     }
 }
-

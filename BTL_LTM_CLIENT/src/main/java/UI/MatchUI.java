@@ -12,16 +12,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MatchUI extends BaseUI {
-    private JLabel timeLabel, opponentNameLabel, opponentScoreLabel, myScoreLabel, questionLabel;
-    private JPanel numberPanel, operatorPanel;
-    private JComboBox<String> questionCombo;
+    private JLabel timeLabel, opponentNameLabel, opponentScoreLabel, myScoreLabel, questionLabel, feedbackLabel;
+    private JPanel numberPanel, operatorPanel, questionButtonsPanel;
+    private JButton[] questionButtons;
     private JTextField expressionField;
     private JButton submitBtn, clearBtn, backspaceBtn;
     private JSONArray questions;
     private int myScore = 0;
-    private int opponentScore = 0; // Track điểm đối thủ
+    private int opponentScore = 0;
     private MatchController matchController;
     private Set<Integer> answeredQuestions = new HashSet<>();
+    private int currentQuestionIndex = 0;
+    private int viewingQuestionIndex = 0;
+    private Set<String> allowedNumbers = new HashSet<>();
     private Timer countdownTimer;
     private int remainingSeconds = 0;
     private String matchId;
@@ -33,7 +36,6 @@ public class MatchUI extends BaseUI {
      */
     @Override
     public void showUI(JFrame frame, BufferedReader in, BufferedWriter out) {
-        // Gọi UI mặc định khi chưa có dữ liệu match
         showUI(frame, in, out, "03:00", "0");
     }
 
@@ -48,7 +50,6 @@ public class MatchUI extends BaseUI {
         this.matchId = matchId;
         this.matchController = new MatchController(in, out, this);
 
-        // Set matchInfo ngay sau khi tạo matchController
         if (this.username != null) {
             System.out.println("Username already set, calling setMatchInfo: " + this.username);
             this.matchController.setMatchInfo(this.matchId, this.username);
@@ -82,7 +83,6 @@ public class MatchUI extends BaseUI {
         JPanel container = new JPanel(new BorderLayout(10, 10));
         container.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // ====== HEADER ======
         JPanel topPanel = new JPanel(new GridLayout(3, 2));
         timeLabel = new JLabel("⏱ Thời gian: " + time);
         opponentNameLabel = new JLabel("👤 Đối thủ: " + scoreOpponent);
@@ -97,19 +97,48 @@ public class MatchUI extends BaseUI {
 
         container.add(topPanel, BorderLayout.NORTH);
 
-        // ====== CENTER (Câu hỏi + chọn câu) ======
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
-        questionCombo = new JComboBox<>();
+        questionButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 5));
+        questionButtonsPanel.setBorder(BorderFactory.createTitledBorder("Chọn câu hỏi"));
+        questionButtons = new JButton[questions.length()];
+
         for (int i = 0; i < questions.length(); i++) {
-            questionCombo.addItem("Câu " + (i + 1));
+            final int index = i;
+            JButton btn = new JButton(String.valueOf(i + 1));
+            btn.setPreferredSize(new Dimension(50, 50));
+            btn.setFont(new Font("Arial", Font.BOLD, 16));
+
+            if (i == 0) {
+                btn.setBackground(new Color(255, 215, 0));
+                btn.setEnabled(true);
+            } else {
+                btn.setBackground(Color.LIGHT_GRAY);
+                btn.setEnabled(false);
+            }
+
+            btn.addActionListener(e -> updateQuestion(index));
+
+            questionButtons[i] = btn;
+            questionButtonsPanel.add(btn);
         }
+
+        centerPanel.add(questionButtonsPanel, BorderLayout.NORTH);
+
+        JPanel questionAndFeedbackPanel = new JPanel(new BorderLayout(5, 5));
         questionLabel = new JLabel("", SwingConstants.LEFT);
         questionLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        centerPanel.add(questionCombo, BorderLayout.NORTH);
-        centerPanel.add(questionLabel, BorderLayout.CENTER);
+
+        feedbackLabel = new JLabel("", SwingConstants.CENTER);
+        feedbackLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        feedbackLabel.setOpaque(true);
+        feedbackLabel.setPreferredSize(new Dimension(0, 40));
+
+        questionAndFeedbackPanel.add(questionLabel, BorderLayout.CENTER);
+        questionAndFeedbackPanel.add(feedbackLabel, BorderLayout.SOUTH);
+
+        centerPanel.add(questionAndFeedbackPanel, BorderLayout.CENTER);
         container.add(centerPanel, BorderLayout.CENTER);
 
-        // ====== BOTTOM (List Number + Operator + Nhập biểu thức) ======
         JPanel bottomPanel = new JPanel(new GridLayout(3, 1, 5, 5));
 
         numberPanel = new JPanel(new FlowLayout());
@@ -121,9 +150,8 @@ public class MatchUI extends BaseUI {
 
         JPanel exprPanel = new JPanel(new BorderLayout());
         expressionField = new JTextField();
-        expressionField.setEditable(false); // Không cho nhập trực tiếp
+        expressionField.setEditable(false);
 
-        // Panel chứa các nút điều khiển
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         backspaceBtn = new JButton("⌫ Xóa");
         clearBtn = new JButton("🗑 Xóa hết");
@@ -139,11 +167,8 @@ public class MatchUI extends BaseUI {
 
         container.add(bottomPanel, BorderLayout.SOUTH);
 
-        // ====== LOGIC ======
-        questionCombo.addActionListener(e -> updateQuestion(questionCombo.getSelectedIndex()));
         submitBtn.addActionListener(e -> handleSubmit());
 
-        // Xóa từng ký tự (backspace)
         backspaceBtn.addActionListener(e -> {
             String current = expressionField.getText();
             if (!current.isEmpty()) {
@@ -151,7 +176,6 @@ public class MatchUI extends BaseUI {
             }
         });
 
-        // Xóa tất cả
         clearBtn.addActionListener(e -> expressionField.setText(""));
 
         updateQuestion(0);
@@ -159,14 +183,33 @@ public class MatchUI extends BaseUI {
     }
 
     /**
-     * Hiển thị dữ liệu câu hỏi tương ứng khi chọn combobox
+     * Hiển thị dữ liệu câu hỏi tương ứng
      */
     private void updateQuestion(int index) {
+        viewingQuestionIndex = index;
+
         JSONObject q = questions.getJSONObject(index);
-        questionLabel.setText("🎯 Mục tiêu: " + q.getInt("target"));
+        int qid = q.getInt("id");
+
+        String statusText = "";
+        if (answeredQuestions.contains(qid)) {
+            statusText = " ✅ [Đã hoàn thành]";
+        } else if (index == currentQuestionIndex) {
+            statusText = " 🎯 [Đang làm]";
+        } else {
+            statusText = " 🔒 [Chưa mở]";
+        }
+
+        questionLabel.setText("Câu " + (index + 1) + statusText + " - Mục tiêu: " + q.getInt("target"));
+
+        allowedNumbers.clear();
+        String[] nums = q.getString("numbers").split(",");
+        for (String n : nums) {
+            allowedNumbers.add(n.trim());
+        }
 
         numberPanel.removeAll();
-        for (String n : q.getString("numbers").split(",")) {
+        for (String n : nums) {
             JButton btn = new JButton(n.trim());
             btn.addActionListener(e -> expressionField.setText(expressionField.getText() + n.trim()));
             numberPanel.add(btn);
@@ -184,33 +227,46 @@ public class MatchUI extends BaseUI {
         numberPanel.repaint();
         operatorPanel.repaint();
         expressionField.setText("");
+
+        feedbackLabel.setText("");
+        feedbackLabel.setBackground(null);
     }
 
     /**
-     * Khi nhấn nút “Kiểm tra”
+     * Khi nhấn nút "Kiểm tra"
      */
     private void handleSubmit() {
         try {
-            int index = questionCombo.getSelectedIndex();
-            JSONObject q = questions.getJSONObject(index);
+            JSONObject q = questions.getJSONObject(viewingQuestionIndex);
             int qid = q.getInt("id");
             int target = q.getInt("target");
             String expr = expressionField.getText().trim();
 
             if (expr.isEmpty()) {
-                JOptionPane.showMessageDialog(null, "⚠️ Bạn chưa nhập biểu thức nào!");
+                showFeedback("⚠️ Bạn chưa nhập biểu thức nào!", new Color(255, 165, 0));
+                return;
+            }
+
+            if (!validateExpression(expr)) {
+                showFeedback("🚫 Gian lận phát hiện! Bạn đang sử dụng số không có trong danh sách.",
+                        new Color(220, 38, 38));
                 return;
             }
 
             if (answeredQuestions.contains(qid)) {
-                JOptionPane.showMessageDialog(null, "⚠️ Bạn đã trả lời đúng câu này rồi!");
+                showFeedback("☑ Bạn đã trả lời đúng câu hỏi này rồi! Không thể submit lại.", new Color(59, 130, 246));
+                return;
+            }
+
+            if (viewingQuestionIndex != currentQuestionIndex) {
+                showFeedback("⚠️ Bạn chỉ có thể làm câu " + (currentQuestionIndex + 1) + "!", new Color(255, 165, 0));
                 return;
             }
 
             matchController.submitAnswer(expr, target);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Lỗi khi gửi kết quả: " + ex.getMessage());
+            showFeedback("❌ Lỗi: " + ex.getMessage(), new Color(239, 68, 68));
         }
     }
 
@@ -219,7 +275,6 @@ public class MatchUI extends BaseUI {
      */
     public void updateTimeAndScore(String time, String oppScore) {
         timeLabel.setText("⏱ Thời gian: " + time);
-        // Không cập nhật điểm đối thủ ở đây nữa, dùng increaseOpponentScore() riêng
     }
 
     /**
@@ -230,12 +285,30 @@ public class MatchUI extends BaseUI {
             return;
         myScore++;
 
-        // ✅ Đánh dấu câu hiện tại là đã trả lời đúng
-        int index = questionCombo.getSelectedIndex();
-        JSONObject q = questions.getJSONObject(index);
+        JSONObject q = questions.getJSONObject(currentQuestionIndex);
         answeredQuestions.add(q.getInt("id"));
 
         myScoreLabel.setText("⭐ Điểm của bạn: " + myScore);
+
+        showFeedback("✅ Đúng rồi! Chuyển sang câu tiếp theo...", new Color(16, 185, 129));
+
+        questionButtons[currentQuestionIndex].setBackground(new Color(34, 197, 94));
+        questionButtons[currentQuestionIndex].setForeground(Color.WHITE);
+
+        Timer delayTimer = new Timer(1500, e -> {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length()) {
+                questionButtons[currentQuestionIndex].setEnabled(true);
+                questionButtons[currentQuestionIndex].setBackground(new Color(255, 215, 0));
+                questionButtons[currentQuestionIndex].setForeground(Color.BLACK);
+
+                updateQuestion(currentQuestionIndex);
+            } else {
+                showFeedback("🎉 Bạn đã hoàn thành tất cả câu hỏi!", new Color(16, 185, 129));
+            }
+        });
+        delayTimer.setRepeats(false);
+        delayTimer.start();
     }
 
     /**
@@ -245,7 +318,6 @@ public class MatchUI extends BaseUI {
         if (opponentScoreLabel == null)
             return;
 
-        // Tăng điểm đối thủ
         opponentScore++;
         opponentScoreLabel.setText("🎯 Điểm đối thủ: " + opponentScore);
     }
@@ -254,7 +326,73 @@ public class MatchUI extends BaseUI {
      * Khi người chơi trả lời sai
      */
     public void notifyWrong() {
-        JOptionPane.showMessageDialog(null, "❌ Sai rồi! Hãy thử lại!");
+        showFeedback("❌ Sai rồi! Hãy thử lại!", new Color(239, 68, 68));
+    }
+
+    /**
+     * Hiển thị feedback trong màn chơi với màu sắc phân biệt
+     * - Xanh lá (16, 185, 129): Trả lời đúng
+     * - Đỏ (239, 68, 68): Trả lời sai
+     * - Đỏ đậm (220, 38, 38): Gian lận
+     * - Cam (255, 165, 0): Cảnh báo
+     * - Xanh dương (59, 130, 246): Thông tin (đã làm rồi)
+     */
+    private void showFeedback(String message, Color bgColor) {
+        if (feedbackLabel == null)
+            return;
+
+        feedbackLabel.setText(message);
+        feedbackLabel.setBackground(bgColor);
+        feedbackLabel.setForeground(Color.WHITE);
+
+        Color orange = new Color(255, 165, 0);
+        Color blue = new Color(59, 130, 246);
+        Color red = new Color(239, 68, 68);
+        Color darkRed = new Color(220, 38, 38);
+
+        int delay = 3000;
+        if (bgColor.equals(red)) {
+            delay = 2500;
+        } else if (bgColor.equals(darkRed)) {
+            delay = 4000;
+        }
+
+        if (bgColor.equals(orange) || bgColor.equals(blue) || bgColor.equals(red) || bgColor.equals(darkRed)) {
+            Timer clearTimer = new Timer(delay, e -> {
+                feedbackLabel.setText("");
+                feedbackLabel.setBackground(null);
+            });
+            clearTimer.setRepeats(false);
+            clearTimer.start();
+        }
+    }
+
+    /**
+     * Validate biểu thức để ngăn chặn gian lận
+     * Kiểm tra xem các số trong biểu thức có nằm trong danh sách cho phép không
+     */
+    private boolean validateExpression(String expr) {
+        if (expr == null || expr.isEmpty()) {
+            return false;
+        }
+
+        String[] tokens = expr.split("[+\\-*/]");
+
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i].trim();
+
+            if (token.isEmpty()) {
+                continue;
+            }
+
+            if (!allowedNumbers.contains(token)) {
+                System.out.println(
+                        "⚠️ Gian lận phát hiện: Số '" + token + "' không có trong danh sách: " + allowedNumbers);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -268,22 +406,18 @@ public class MatchUI extends BaseUI {
      * Bắt đầu đếm ngược thời gian
      */
     private void startCountdown(String timeStr) {
-        // Dừng timer cũ nếu có
         if (countdownTimer != null && countdownTimer.isRunning()) {
             countdownTimer.stop();
         }
 
-        // Parse thời gian từ format "MM:SS"
         remainingSeconds = parseTimeToSeconds(timeStr);
 
-        // Tạo timer mới đếm ngược mỗi giây
         countdownTimer = new Timer(1000, e -> {
             if (remainingSeconds > 0) {
                 remainingSeconds--;
                 String formattedTime = formatSecondsToTime(remainingSeconds);
                 timeLabel.setText("⏱ Thời gian: " + formattedTime);
             } else {
-                // Hết thời gian
                 countdownTimer.stop();
                 handleTimeUp();
             }
@@ -302,7 +436,7 @@ public class MatchUI extends BaseUI {
             int seconds = Integer.parseInt(parts[1]);
             return minutes * 60 + seconds;
         } catch (Exception e) {
-            return 180; // Mặc định 3 phút nếu parse lỗi
+            return 180;
         }
     }
 
@@ -328,14 +462,16 @@ public class MatchUI extends BaseUI {
      * Xử lý khi hết thời gian
      */
     private void handleTimeUp() {
-        JOptionPane.showMessageDialog(null, "⏰ Hết thời gian!\nĐang gửi kết quả...",
-                "Hết Giờ", JOptionPane.INFORMATION_MESSAGE);
+        showFeedback("⏰ Hết thời gian! Đang gửi kết quả...", new Color(239, 68, 68));
 
-        // Gửi kết quả về server
+        submitBtn.setEnabled(false);
+        clearBtn.setEnabled(false);
+        backspaceBtn.setEnabled(false);
+
         if (matchController != null) {
             matchController.endMatch(myScore, opponentScore);
         } else {
-            JOptionPane.showMessageDialog(null, "Lỗi: Không thể gửi kết quả trận đấu!");
+            showFeedback("❌ Lỗi: Không thể gửi kết quả trận đấu!", new Color(239, 68, 68));
         }
     }
 
