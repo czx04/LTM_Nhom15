@@ -3,6 +3,7 @@ package server;
 import db.UserDao;
 import handler.AuthHandler;
 import handler.HomeHandler;
+import handler.MatchHandler;
 import util.Logger;
 import util.SocketController;
 
@@ -17,6 +18,7 @@ public class ClientHandler extends Thread {
 
     private AuthHandler authHandler;
     private HomeHandler homeHandler;
+    private MatchHandler matchHandler;
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -30,6 +32,7 @@ public class ClientHandler extends Thread {
             UserDao userDao = new UserDao();
             authHandler = new AuthHandler(userDao);
             homeHandler = new HomeHandler(userDao);
+            matchHandler = new MatchHandler(userDao);
             System.out.println("Client connected");
             String line;
             while ((line = in.readLine()) != null) {
@@ -66,18 +69,9 @@ public class ClientHandler extends Thread {
                 // Xử lý khi người chơi đang trong trận
                 if (username != null) {
                     Integer matchId = SocketController.getPlayerMatchId(username);
-                    if (matchId != null && homeHandler != null) {
-                        // Thông báo cho đối thủ
-                        ClientHandler opponent = SocketController.getOpponentInMatch(username);
-                        if (opponent != null) {
-                            try {
-                                opponent.writeEvent("OPPONENT_LEFT|" + username + " đã ngắt kết nối");
-                            } catch (IOException ignored) {
-                            }
-                        }
-                        // Xóa khỏi trận
-                        SocketController.removePlayerFromMatch(username);
-                        Logger.info("Player " + username + " disconnected from match " + matchId);
+                    if (matchId != null && matchHandler != null) {
+                        // Sử dụng matchHandler để xử lý leave match
+                        matchHandler.handleLeaveMatch(this);
                     }
                 }
 
@@ -110,15 +104,15 @@ public class ClientHandler extends Thread {
             case "LOGOUT" -> authHandler.handleLogout(this);
             case "GET_USERS_ONLINE" -> homeHandler.getUserOnl(this);
             case "INVITE" -> homeHandler.sendInvite(this, parts);
-            case "INVITE_ACCEPT" -> homeHandler.handleInviteAccept(this, parts);
+            case "INVITE_ACCEPT" -> matchHandler.handleInviteAccept(this, parts);
             case "INVITE_REJECT" -> homeHandler.handleInviteReject(this, parts);
             case "GET_RANK" -> homeHandler.getLeaderboard(parts);
             case "GET_MATCH_HISTORY" -> homeHandler.getMatchHistory(this);
-            case "JOIN_MATCH" -> homeHandler.getMatchDisplay(this, parts);
-            case "SUBMIT_ANSWER" -> homeHandler.checkAnswer(this, parts);
-            case "LEAVE_MATCH" -> homeHandler.handleLeaveMatch(this);
-            case "FINISH_MATCH" -> homeHandler.handleFinishMatch(this, parts);
-            case "MATCH_END" -> homeHandler.handleMatchEnd(this, parts);
+            case "JOIN_MATCH" -> matchHandler.getMatchDisplay(this, parts);
+            case "SUBMIT_ANSWER" -> matchHandler.checkAnswer(this, parts);
+            case "LEAVE_MATCH" -> matchHandler.handleLeaveMatch(this);
+            case "FINISH_MATCH" -> matchHandler.handleFinishMatch(this, parts);
+            case "MATCH_END" -> matchHandler.handleMatchEnd(this, parts);
             default -> "LOI GI DO ROI";
         };
     }
